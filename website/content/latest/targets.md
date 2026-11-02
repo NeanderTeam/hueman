@@ -66,6 +66,7 @@ notes means nothing extra.
 | `dunst_colors.conf.j2` | dunst | `polybar` | — |
 | `fzf_opts.j2` | fzf | `polybar` | — |
 | `fzf_theme.j2` | fzf (loader) | — | Does not read palette variables |
+| `flowlauncher_theme.xaml.j2` | Flow Launcher | `polybar` | `extra_vars`: `border_active: kitty.active_border_color`. See [Windows and WSL](guides/windows.md) |
 | `herdr_theme_custom.toml.j2` | herdr | `polybar` | — |
 | `k9s_theme.yaml.j2` | k9s | `polybar` | — |
 | `kitty.conf.j2` | kitty | `kitty` | — |
@@ -85,11 +86,13 @@ notes means nothing extra.
 | `rofi_theme.rasi.j2` | rofi | `polybar` | — |
 | `sshub_theme.toml.j2` | sshub | `polybar` | — |
 | `starship_block.toml.j2` | starship | `polybar` | Meant for `patch`; see `hueman/data/hueman.config.example.yaml` (or `hueman init`) |
+| `telegram.attheme.j2` | Telegram (Android cloud theme) | `polybar` | `extra_vars`: `bg0h`, `bg2`, `blu`, `pur`, `aqu` (from `kitty`). See [Windows and WSL](guides/windows.md#telegram) |
 | `termux_colors.properties.j2` | Termux | `kitty` | See [Termux and proot](guides/termux.md) |
 | `tmux.conf.j2` | tmux | `tmux` | — |
 | `tuicr_theme.toml.j2` | tuicr | `polybar` | — |
 | `wezterm_colors.lua.j2` | WezTerm | `kitty` | See [Windows and WSL](guides/windows.md) |
 | `windhawk_taskbar.json.j2` | Windhawk (taskbar) | `polybar` | See [Windows and WSL](guides/windows.md) |
+| `yasb_root.css.j2` | YASB | `polybar` | `patch` of the `:root` block; `extra_vars`: `border_active`, `border_inactive`. See [Windows and WSL](guides/windows.md) |
 | `yazi_theme.toml.j2` | yazi | `polybar` | — |
 | `zen_theme.json.j2` | Zen Browser | `polybar` | — |
 
