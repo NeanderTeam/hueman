@@ -100,6 +100,50 @@ targets:
   #   skip_unless_path_exists: "/mnt/c/Windows/System32/schtasks.exe"
   #   outputs: ["/mnt/c/Users/ME/AppData/Local/DotfilesTheme/taskbar-colors.json"]
 
+  # --- YASB y Flow Launcher (Windows, desde WSL). Requieren `win_home` en
+  # `vars` (ej. "/mnt/c/Users/ME"). YASB: `patch` solo reemplaza el bloque
+  # `:root { ... }` de su styles.css (no crea el archivo; YASB recarga solo).
+  # Flow Launcher: tema propio Hueman.xaml; se elige una vez en Settings >
+  # Appearance y hay que reseleccionarlo para ver cambios.
+  # yasb_theme:
+  #   template: yasb_root.css.j2
+  #   palette_key: polybar
+  #   extra_vars:
+  #     border_active: kitty.active_border_color
+  #     border_inactive: kitty.inactive_border_color
+  #   mode: patch
+  #   outputs: ["${win_home}/.config/yasb/styles.css"]
+  #   skip_unless_path_exists: "${win_home}/.config/yasb/styles.css"
+  #   patch:
+  #     strategy: regex_splice
+  #     marker_regex: ':root\s*\{.*?\}'
+  #
+  # flowlauncher_theme:
+  #   template: flowlauncher_theme.xaml.j2
+  #   palette_key: polybar
+  #   extra_vars:
+  #     border_active: kitty.active_border_color
+  #   mode: overwrite
+  #   outputs: ["${win_home}/AppData/Roaming/FlowLauncher/Themes/Hueman.xaml"]
+  #   skip_unless_path_exists: "${win_home}/AppData/Roaming/FlowLauncher/Themes"
+
+  # --- Tema en la nube de Telegram (Android). Renderiza un .attheme y el
+  # reload lo sube con el script de ejemplo `examples/telegram/telegram-theme-sync`
+  # (copialo a una ruta tuya; necesita Telethon aparte, ver su README). Solo
+  # corre si existe la sesion; en segundo plano y con timeout para no bloquear.
+  # telegram_theme:
+  #   template: telegram.attheme.j2
+  #   palette_key: polybar
+  #   extra_vars:
+  #     bg0h: kitty.color0
+  #     bg2: kitty.inactive_border_color
+  #     blu: kitty.color12
+  #     pur: kitty.color13
+  #     aqu: kitty.color14
+  #   mode: overwrite
+  #   outputs: ["~/.local/share/hueman/telegram/current.attheme"]
+  #   reload: "[ -f ~/.config/hueman/telegram.session ] && (timeout 60 ~/.local/bin/telegram-theme-sync ~/.local/share/hueman/telegram/current.attheme >/dev/null 2>&1 &) || true"
+
 # Comandos que corren una sola vez al final de `set`, no por target.
 # No corren cuando se usa `set --only ...` (re-render parcial).
 # Los comandos de `reload` y `post_apply` admiten placeholders: `{name}`
