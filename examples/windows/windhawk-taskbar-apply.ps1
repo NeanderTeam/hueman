@@ -1,10 +1,11 @@
-# EJEMPLO para adaptar (no es parte del producto hueman).
-# Que hace: lee un JSON con las claves "fill" y "text" (#RRGGBB), las valida y
-# actualiza los estilos del mod de Windhawk "windows-11-taskbar-styler" en el
-# registro; recarga el mod solo si algun color cambio.
-# Requiere elevacion: escribe bajo HKLM. Pensado para correr desde una tarea
-# programada con RunLevel Highest (ver install-windhawk-taskbar-task.ps1).
-# Sin probar en este repo: revisa el script antes de ejecutarlo.
+# EXAMPLE to adapt (not part of the hueman product).
+# What it does: reads a JSON file with the keys "fill" and "text" (#RRGGBB),
+# validates them and updates the styles of the Windhawk
+# "windows-11-taskbar-styler" mod in the registry; reloads the mod only if a
+# color changed.
+# Requires elevation: it writes under HKLM. Meant to run from a scheduled task
+# with RunLevel Highest (see install-windhawk-taskbar-task.ps1).
+# Not tested in this repo: review the script before running it.
 <#
 .SYNOPSIS
   Applies taskbar colors to the Windhawk "windows-11-taskbar-styler" mod.

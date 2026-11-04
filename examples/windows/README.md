@@ -1,35 +1,36 @@
-# Ejemplos para Windows
+# Windows examples
 
-Scripts de PowerShell de ejemplo para usar hueman desde WSL con Windows. Son
-puntos de partida para adaptar, no parte del producto. La guía completa está en
-`website/content/latest/guides/windows.md` ("Windows y WSL").
+Example PowerShell scripts for using hueman from WSL on Windows. They are
+starting points to adapt, not part of the product. The full guide is in
+`website/content/latest/guides/windows.md` ("Windows and WSL").
 
-| Archivo | Para qué |
-|---------|----------|
-| `install-windhawk-taskbar-task.ps1` | Instalación única (PowerShell como Administrador): copia el script de aplicar a `$env:ProgramData\DotfilesTheme` y registra la tarea programada elevada `DotfilesThemeWindhawk`. `-Uninstall` la elimina. |
-| `windhawk-taskbar-apply.ps1` | Lo ejecuta la tarea: lee `taskbar-colors.json` (`fill`, `text`) y actualiza los colores del mod `windows-11-taskbar-styler` de Windhawk. Solo recarga el mod si algo cambió. |
+| File | Purpose |
+|------|---------|
+| `install-windhawk-taskbar-task.ps1` | One-time install (PowerShell as Administrator): copies the apply script to `$env:ProgramData\DotfilesTheme` and registers the elevated scheduled task `DotfilesThemeWindhawk`. `-Uninstall` removes it. |
+| `windhawk-taskbar-apply.ps1` | Run by the task: reads `taskbar-colors.json` (`fill`, `text`) and updates the colors of Windhawk's `windows-11-taskbar-styler` mod. It only reloads the mod if something changed. |
 
-## Uso
+## Usage
 
-Desde un PowerShell elevado, en la carpeta con ambos archivos:
+From an elevated PowerShell, in the folder with both files:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-windhawk-taskbar-task.ps1
 ```
 
-Opciones: `-TaskName <NombreTarea>` y `-DataFile <RUTA>`. Por defecto el JSON
-es `$env:LOCALAPPDATA\DotfilesTheme\taskbar-colors.json`; el target de hueman
-debe escribir ahí (`/mnt/c/Users/<usuario>/AppData/Local/DotfilesTheme/...`).
+Options: `-TaskName <TaskName>` and `-DataFile <PATH>`. By default the JSON
+file is `$env:LOCALAPPDATA\DotfilesTheme\taskbar-colors.json`; the hueman target
+must write there (`/mnt/c/Users/<user>/AppData/Local/DotfilesTheme/...`).
 
-## Seguridad
+## Security
 
-- El script de aplicar vive en una carpeta de `ProgramData` con permisos solo
-  para SYSTEM y Administradores (los usuarios, lectura y ejecución).
-- El JSON, escribible por el usuario, se trata solo como dato: cada valor debe
-  cumplir `^#[0-9A-Fa-f]{6}$` o el script aborta sin cambios.
-- Solo toca valores de la clave de ajustes del mod y su bandera `Disabled`.
+- The apply script lives in a `ProgramData` folder that only SYSTEM and
+  Administrators can write to (users get read and execute).
+- The JSON file, which the user can write to, is treated only as data: every
+  value must match `^#[0-9A-Fa-f]{6}$` or the script aborts without changes.
+- It only touches values under the mod's settings key and its `Disabled` flag.
 
-## Aviso
+## Notice
 
-Estos scripts no se probaron en este repositorio (no hay PowerShell ni Windows
-en el entorno de desarrollo). Léelos y pruébalos con cuidado antes de usarlos.
+These scripts were not tested in this repository (there is no PowerShell or
+Windows in the development environment). Read them and test them carefully
+before use.

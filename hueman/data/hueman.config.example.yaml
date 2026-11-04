@@ -89,10 +89,10 @@ targets:
     outputs:
       - "~/.config/starship.toml"
 
-  # --- Ejemplo de guardas opcionales: `skip_if_missing_parent` omite una
-  # salida cuyo directorio padre no existe; `skip_unless_path_exists` (ruta o
-  # lista) omite TODO el target (sin escribir ni reload) salvo que existan
-  # todas esas rutas, util para "solo si esta instalada la herramienta X".
+  # --- Example of optional guards: `skip_if_missing_parent` skips an output
+  # whose parent directory does not exist; `skip_unless_path_exists` (path or
+  # list) skips the WHOLE target (no write, no reload) unless all of those
+  # paths exist, useful for "only if tool X is installed".
   # windhawk_taskbar:
   #   template: windhawk_taskbar.json.j2
   #   palette_key: polybar
@@ -100,11 +100,11 @@ targets:
   #   skip_unless_path_exists: "/mnt/c/Windows/System32/schtasks.exe"
   #   outputs: ["/mnt/c/Users/ME/AppData/Local/DotfilesTheme/taskbar-colors.json"]
 
-  # --- YASB y Flow Launcher (Windows, desde WSL). Requieren `win_home` en
-  # `vars` (ej. "/mnt/c/Users/ME"). YASB: `patch` solo reemplaza el bloque
-  # `:root { ... }` de su styles.css (no crea el archivo; YASB recarga solo).
-  # Flow Launcher: tema propio Hueman.xaml; se elige una vez en Settings >
-  # Appearance y hay que reseleccionarlo para ver cambios.
+  # --- YASB and Flow Launcher (Windows, from WSL). They require `win_home` in
+  # `vars` (e.g. "/mnt/c/Users/ME"). YASB: `patch` only replaces the
+  # `:root { ... }` block of its styles.css (it does not create the file; YASB
+  # reloads on its own). Flow Launcher: its own Hueman.xaml theme; pick it once
+  # in Settings > Appearance, and reselect it to see changes.
   # yasb_theme:
   #   template: yasb_root.css.j2
   #   palette_key: polybar
