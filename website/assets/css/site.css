@@ -686,6 +686,14 @@ a:hover {
   font-weight: 600;
 }
 
+.doc img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+
 .doc h1,
 .doc h2,
 .doc h3,
