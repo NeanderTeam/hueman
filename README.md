@@ -8,7 +8,7 @@
 
 <p align="center">
 One theme for your terminal, editor, prompt, and the rest of your setup.<br />
-You own the map — which file each app uses — and one command paints it everywhere.<br />
+You say which file each app uses, and one command paints them all.<br />
 Not a dotfiles manager: output paths live in your own <code>hueman.config.yaml</code>,
 outside this repo.
 </p>
@@ -47,15 +47,15 @@ theme), `sync` (shared state across machines).
 - Per-target `reload` and global `post_apply`, best-effort, with `warn` /
   `error` policy.
 - Optional sync of the active palette across machines (`state_sync`).
-- Adding a tool is a template + a target, not an engine change.
+- To support a new app, add a template and a target.
 
 ## Packaged tools
 
 `hueman/palettes/` and `hueman/templates/` ship 25 generic palettes and
 templates for common tools (kitty, tmux, polybar, nvim/nightfox, dunst, bspwm,
 yazi, qutebrowser, rofi, fzf, atuin, oh-my-posh, wezterm, starship, Termux,
-herdr, and more). For idiosyncratic targets use `template_dirs` in your config
-instead of asking them to be packaged here.
+herdr, and more). For other tools, use `template_dirs` in your config instead of
+asking for them to be packaged here.
 
 ## Docs
 

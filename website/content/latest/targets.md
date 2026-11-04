@@ -110,8 +110,8 @@ third-party templates before use.
 
 ## Extending
 
-For idiosyncratic tools (yours, uncommon ones) use `template_dirs` in your
-config instead of asking for packaged templates.
+For tools that are yours or uncommon, use `template_dirs` in your config
+instead of asking for packaged templates.
 
 
 Step-by-step guide: [Add support for a tool](guides/add-a-tool.md).

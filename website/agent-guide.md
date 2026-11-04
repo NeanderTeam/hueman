@@ -24,8 +24,8 @@ the product **landing**. Docs live in the same `index.html` SPA with
 - It is not a dotfiles manager: it does not install, link, or version anything.
   It only writes colors to the paths in `outputs`.
 - One palette feeds many targets. Switching theme is a `set`.
-- Supporting a new app is a template + a target, not an engine change
-  (`p=intro`, `p=architecture`).
+- To support a new app, add a template and a target (`p=intro`,
+  `p=architecture`).
 
 ## Vocabulary, in the order worth explaining
 

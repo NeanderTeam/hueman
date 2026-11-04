@@ -3,8 +3,7 @@
 **One palette. Every tool.**
 
 hueman keeps your terminal, editor, prompt, and the rest of your setup on the
-same theme. You own the map — which file each app uses — and one command paints
-it everywhere.
+same theme. You say which file each app uses, and one command paints them all.
 
 Core ideas:
 
@@ -14,5 +13,5 @@ Core ideas:
 - Reload and post_apply are best-effort, with a `warn` / `error` policy.
 - Optional sync of the active palette across machines (`state_sync`).
 
-Extension stays simple on purpose: **adding a tool is a template + a target**,
-not an engine change. Guide: [Add support for a tool](guides/add-a-tool.md).
+To add a tool, write a template and a target. The engine doesn't change.
+Guide: [Add support for a tool](guides/add-a-tool.md).
