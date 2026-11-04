@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### CI
+
+- Pin test runner to ubuntu-24.04 (a7e670d)
+
 ### Documentation
 
 - Add posting, tuicr and sshub chips with GitHub links (dd0e3ff)
