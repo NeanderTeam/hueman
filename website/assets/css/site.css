@@ -873,15 +873,6 @@ body[data-view="landing"] .nav-toggle {
   color: var(--fg);
 }
 
-.landing__h3 {
-  margin: 0 0 0.45rem;
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  color: var(--fg);
-}
-
 .landing__sub {
   margin: 0 0 1.25rem;
   color: var(--fg-soft);
@@ -945,47 +936,6 @@ body[data-view="landing"] .nav-toggle {
   white-space: pre;
 }
 
-/* Mechanism list — not equal icon cards */
-.mech {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  border-top: 1px solid var(--line);
-}
-
-.mech__item {
-  padding: 1.35rem 1.25rem 1.5rem 0;
-  border-bottom: 1px solid var(--line);
-  border-right: 1px solid var(--line);
-}
-
-.mech__item:nth-child(3n) {
-  border-right: 0;
-  padding-right: 0;
-}
-
-.mech__item:nth-child(n + 4) {
-  border-bottom: 0;
-}
-
-.mech__item p {
-  margin: 0;
-  color: var(--fg-soft);
-  font-size: 0.95rem;
-}
-
-.mech__item code {
-  font-size: 0.88em;
-  color: var(--fg);
-}
-
-.landing__split {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 2rem;
-  align-items: start;
-}
-
 .landing__prose {
   margin: 0 0 0.9rem;
   max-width: 36rem;
@@ -996,18 +946,6 @@ body[data-view="landing"] .nav-toggle {
 
 .landing__prose:last-child {
   margin-bottom: 0;
-}
-
-.landing__quote {
-  margin: 0;
-  padding: 1.25rem 0 1.25rem 1.15rem;
-  border-left: 1px solid var(--accent);
-  color: var(--fg-soft);
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  line-height: 1.4;
-  font-weight: 500;
-  letter-spacing: -0.015em;
 }
 
 .landing__chips {
@@ -1859,9 +1797,7 @@ body[data-view="landing"] .nav-toggle {
   }
 
   .landing__hero,
-  .landing__split,
-  .compare,
-  .mech {
+  .compare {
     grid-template-columns: 1fr;
   }
 
@@ -1870,18 +1806,6 @@ body[data-view="landing"] .nav-toggle {
     border-bottom: 1px solid var(--line);
   }
 
-  .mech__item {
-    border-right: 0;
-    padding-right: 0;
-  }
-
-  .mech__item:nth-child(n + 3) {
-    border-bottom: 1px solid var(--line);
-  }
-
-  .mech__item:last-child {
-    border-bottom: 0;
-  }
 }
 
 @media (max-width: 900px) {

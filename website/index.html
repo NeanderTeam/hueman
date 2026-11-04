@@ -6,7 +6,7 @@
     <meta
       name="description"
       id="meta-description"
-      content="One palette. Every tool. Apply one theme across your terminal, editor, prompt, and the rest of your setup — in a single command."
+      content="One palette. Every tool. Apply one theme across your terminal, editor, prompt, and the rest of your setup with a single command."
     />
     <link rel="canonical" href="https://hueman.cuevaneander.tech/" />
     <meta property="og:type" content="website" />
@@ -243,14 +243,14 @@
           <section class="landing__band" aria-labelledby="problem-title">
             <div class="compare">
               <div class="compare__side compare__side--before">
-                <h2 id="problem-title">Four apps. Four themes.</h2>
+                <h2 id="problem-title">Four apps, four themes</h2>
                 <p>
                   Kitty on mocha. Neovim on gruvbox. Starship on something else.
-                  Every change by hand. The setup works — it just doesn’t look like one.
+                  Every change is a manual edit in a different config, so it all works but never quite matches.
                 </p>
               </div>
               <div class="compare__side compare__side--after">
-                <h2>One palette. One command.</h2>
+                <h2>One palette, one command</h2>
                 <pre class="compare__term" tabindex="0"><code>$ hueman set catppuccin-mocha
 INFO: Generated: ~/.config/kitty/theme.conf
 INFO: Generated: ~/.config/tmux/theme.conf
@@ -260,51 +260,36 @@ INFO: Active theme: catppuccin-mocha</code></pre>
           </section>
 
           <section class="landing__band" aria-labelledby="what-title">
-            <h2 id="what-title" class="landing__h">Your control. Color in sync.</h2>
-            <div class="mech">
-              <article class="mech__item">
-                <h3 class="landing__h3">Declarative</h3>
-                <p>Output paths live in your <code>hueman.config.yaml</code>. No guessed routes, no lock-in to a dotfiles manager.</p>
-              </article>
-              <article class="mech__item">
-                <h3 class="landing__h3">Overwrite + patch</h3>
-                <p>Full generated files, or blocks inside configs you still edit by hand.</p>
-              </article>
-              <article class="mech__item">
-                <h3 class="landing__h3">Extensible</h3>
-                <p>Add a tool with a Jinja template and a target. No engine fork required.</p>
-              </article>
-            </div>
+            <h2 id="what-title" class="landing__h">How it works</h2>
+            <p class="landing__prose">
+              Output paths live in your <code>hueman.config.yaml</code>, so there
+              are no guessed routes and no dotfiles manager to adopt. A target
+              either overwrites a generated file or patches a block inside a
+              config you still edit by hand. To add a tool, write a Jinja
+              template and a target; the engine stays untouched.
+            </p>
           </section>
 
           <section class="landing__band" aria-labelledby="control-title">
-            <h2 id="control-title" class="landing__h">You own the map. It paints the color.</h2>
-            <div class="landing__split">
-              <div>
-                <p class="landing__prose">
-                  Paths, targets, and templates are yours. You decide which file
-                  each tool touches, what gets fully overwritten, and what gets
-                  patched in place. hueman doesn’t invent your layout — it runs
-                  the one you already built.
-                </p>
-                <p class="landing__prose">
-                  Switch palettes and one command regenerates the whole map.
-                  Another app is another target and, if you need it, another
-                  template — without touching the engine.
-                </p>
-              </div>
-              <blockquote class="landing__quote">
-                One source of truth for color. The rest of the setup stays yours,
-                down to the path.
-              </blockquote>
-            </div>
+            <h2 id="control-title" class="landing__h">Paths are yours</h2>
+            <p class="landing__prose">
+              Paths, targets, and templates are yours. You decide which file
+              each tool touches, what gets fully overwritten, and what gets
+              patched in place. hueman writes to the paths you list in your
+              config. It never guesses where a file lives.
+            </p>
+            <p class="landing__prose">
+              Switch palettes and one command regenerates the whole map.
+              Another app is another target and, if you need it, another
+              template, with no change to the engine.
+            </p>
           </section>
 
           <section class="landing__band" aria-labelledby="tools-title">
-            <h2 id="tools-title" class="landing__h">Works with — plus whatever you add</h2>
+            <h2 id="tools-title" class="landing__h">Works with these, or add your own</h2>
             <p class="landing__sub">
-              Starter templates for common tools. Anything idiosyncratic goes in
-              your <code>template_dirs</code>.
+              Starter templates for common tools. Anything else goes in your
+              own <code>template_dirs</code>.
             </p>
             <ul class="landing__chips" aria-label="Tools with a packaged template">
               <li><a href="https://github.com/kovidgoyal/kitty" target="_blank" rel="noopener"><img class="landing__chip-icon" src="assets/img/tools/kitty.svg" alt="" width="14" height="14" />kitty</a></li>
@@ -348,7 +333,7 @@ INFO: Active theme: catppuccin-mocha</code></pre>
               <li>
                 <div>
                   <code>hueman init</code>
-                  <span> — writes a sample config; point the <code>outputs</code> at your paths</span>
+                  <span>writes a sample config. Point its <code>outputs</code> at your paths.</span>
                 </div>
               </li>
               <li>

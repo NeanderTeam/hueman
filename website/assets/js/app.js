@@ -14,7 +14,7 @@
     landing: {
       title: "hueman: one palette, every tool",
       description:
-        "One palette. Every tool. Apply one theme across kitty, nvim, tmux, starship, and whatever you declare — one command.",
+        "One palette. Every tool. Apply one theme across kitty, nvim, tmux, starship, and whatever you declare with one command.",
     },
     docs: {
       title: "hueman: docs",
