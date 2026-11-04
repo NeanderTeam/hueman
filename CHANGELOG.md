@@ -14,6 +14,7 @@ All notable changes to this project are documented here.
 
 ### Documentation
 
+- Translate telegram example and config comments to English (c946ebc)
 - Tighten landing copy (c202939)
 - Translate windows examples to English (86062ea)
 - Tighten wording in docs and readme (0be51f9)
