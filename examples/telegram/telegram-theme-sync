@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-# EJEMPLO para adaptar (no es parte del producto hueman ni del paquete pip).
-# Sin probar en este repo: revisa el script antes de ejecutarlo.
-"""Sube un archivo .attheme a un tema en la nube de Telegram que ya existe.
+# EXAMPLE to adapt (not part of the hueman product or the pip package).
+# Untested in this repo: review the script before running it.
+"""Upload an .attheme file to an existing Telegram cloud theme.
 
-Uso: telegram-theme-sync <archivo.attheme> [--slug SLUG] [--login]
+Usage: telegram-theme-sync <file.attheme> [--slug SLUG] [--login]
 
-Requiere Telethon en un venv aparte (hueman no lo instala):
+Requires Telethon in a separate venv (hueman does not install it):
     python3 -m venv ~/.local/share/hueman-telegram
     ~/.local/share/hueman-telegram/bin/pip install telethon
-y ejecutar este script con el python de ese venv.
+and run this script with that venv's python.
 
-Archivos (directorio de config: $HUEMAN_TELEGRAM_DIR o ~/.config/hueman):
-    telegram.env      TG_API_ID, TG_API_HASH y, opcional, TG_THEME_SLUG (modo 600)
-    telegram.session  sesion de Telethon, la crea --login (modo 600)
+Files (config directory: $HUEMAN_TELEGRAM_DIR or ~/.config/hueman):
+    telegram.env      TG_API_ID, TG_API_HASH and, optionally, TG_THEME_SLUG (mode 600)
+    telegram.session  Telethon session, created by --login (mode 600)
 
-El slug es la parte final de t.me/addtheme/<slug>; la cuenta que corre el
-script debe ser la creadora del tema.
+The slug is the last part of t.me/addtheme/<slug>; the account that runs the
+script must be the one that created the theme.
 """
 import argparse
 import asyncio
@@ -54,19 +54,19 @@ def load_env(path: Path) -> dict:
 async def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("file", type=Path, nargs="?")
-    ap.add_argument("--slug", help="slug del tema (o TG_THEME_SLUG en telegram.env)")
-    ap.add_argument("--login", action="store_true", help="solo autenticar y salir")
+    ap.add_argument("--slug", help="theme slug (or TG_THEME_SLUG in telegram.env)")
+    ap.add_argument("--login", action="store_true", help="only authenticate, then exit")
     args = ap.parse_args()
 
     if not ENV_FILE.is_file():
-        print(f"error: falta {ENV_FILE} (TG_API_ID, TG_API_HASH)", file=sys.stderr)
+        print(f"error: missing {ENV_FILE} (TG_API_ID, TG_API_HASH)", file=sys.stderr)
         return 2
     env = load_env(ENV_FILE)
     slug = args.slug or env.get("TG_THEME_SLUG")
 
     client = TelegramClient(str(SESSION), int(env["TG_API_ID"]), env["TG_API_HASH"])
-    await client.start()  # interactivo solo la primera vez
-    # Telethon ya agrega ".session" al nombre; SESSION es la ruta completa.
+    await client.start()  # interactive only the first time
+    # Telethon already appends ".session" to the name; SESSION is the full path.
     os.chmod(SESSION, 0o600)
 
     if args.login:
@@ -75,21 +75,21 @@ async def main() -> int:
         return 0
 
     if not args.file or not args.file.is_file():
-        print("error: se requiere un archivo .attheme", file=sys.stderr)
+        print("error: an .attheme file is required", file=sys.stderr)
         return 2
     if not slug:
-        print("error: falta el slug (--slug o TG_THEME_SLUG)", file=sys.stderr)
+        print("error: missing slug (--slug or TG_THEME_SLUG)", file=sys.stderr)
         return 2
 
     theme = await client(GetThemeRequest(format=FORMAT, theme=InputThemeSlug(slug=slug)))
     me = await client.get_me()
-    if not theme.creator:  # el flag solo viene activo si la cuenta es la duena
-        print("error: esta cuenta no es la creadora del tema", file=sys.stderr)
+    if not theme.creator:  # the flag is only set when the account owns the theme
+        print("error: this account is not the creator of the theme", file=sys.stderr)
         return 3
 
-    # Se sube como documento (via Saved Messages) para obtener un InputDocument.
-    # El mime debe ser application/x-tgtheme-android: con un mime adivinado,
-    # account.updateTheme responde ThemeMimeInvalidError (por eso no send_file).
+    # Upload as a document (via Saved Messages) to get an InputDocument.
+    # The mime must be application/x-tgtheme-android: with a guessed mime,
+    # account.updateTheme answers ThemeMimeInvalidError (hence no send_file).
     uploaded = await client.upload_file(args.file)
     sent = await client(
         SendMediaRequest(
@@ -118,9 +118,9 @@ async def main() -> int:
             )
         )
     finally:
-        await client.delete_messages("me", [msg.id])  # deja limpio Saved Messages
+        await client.delete_messages("me", [msg.id])  # keep Saved Messages clean
 
-    print(f"tema '{theme.title}' ({slug}) actualizado para el usuario {me.id}")
+    print(f"theme '{theme.title}' ({slug}) updated for user {me.id}")
     await client.disconnect()
     return 0
 
