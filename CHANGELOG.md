@@ -6,8 +6,16 @@ All notable changes to this project are documented here.
 
 ### Documentation
 
+- Add posting, tuicr and sshub chips with GitHub links (dd0e3ff)
+- Add yasb, flow launcher and telegram to windows guide (bc0bdc8)
+- Add telegram theme sync example and commented targets (da3bd7c)
 - Set Open Graph image from stone palette logo (fb0e7d0)
 - Freeze v0.3.0 documentation snapshot (9b9de6a)
+
+### Features
+
+- Add telegram attheme template (4a96746)
+- Add yasb and flow launcher themes (95c726a)
 
 ## [0.3.0] - 2026-10-29
 
