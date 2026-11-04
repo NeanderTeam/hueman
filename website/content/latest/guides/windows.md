@@ -4,6 +4,10 @@ hueman runs inside WSL and writes to the Windows disk through `/mnt/c`. That
 covers theming Windows Terminal, WezTerm, qutebrowser, the taskbar (via
 Windhawk), YASB, and Flow Launcher. This guide shows the patterns.
 
+![YASB bar, WezTerm and Flow Launcher on a Windows desktop, all themed by one hueman palette](assets/img/windows-desktop.webp)
+
+YASB (top), WezTerm and Flow Launcher, all painted from one palette.
+
 ## Paths in `outputs`
 
 Windows paths appear from WSL as `/mnt/c/Users/<user>/...`. To avoid repeating
