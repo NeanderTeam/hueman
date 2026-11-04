@@ -1,67 +1,68 @@
-# Ejemplo mínimo de configuración de hueman.
+# Minimal hueman configuration example.
 #
-# Este archivo NO vive dentro de hueman/ — cada usuario/máquina trae el
-# suyo (por convención, junto al repo de dotfiles que va a themear, ej.
-# "~/dotfiles/theme/hueman.config.yaml"), y se lo pasa a la herramienta
-# con `hueman --config <ruta>` (o vía la variable HUEMAN_CONFIG, o
-# dejándolo en ~/.config/hueman/config.yaml).
+# This file does NOT live inside hueman/: every user/machine brings its
+# own (by convention next to the dotfiles repo it will theme, e.g.
+# "~/dotfiles/theme/hueman.config.yaml") and passes it to the tool with
+# `hueman --config <path>` (or via the HUEMAN_CONFIG variable, or by
+# leaving it at ~/.config/hueman/config.yaml).
 #
-# No hay concepto de "entorno" ni convención de carpetas: cada target
-# declara su lista explícita de archivos de salida (`outputs`). Si hay
-# varias máquinas/perfiles que comparten el mismo tema, basta con listar
-# todas las rutas ahí.
+# There is no concept of "environment" and no folder convention: each
+# target declares its explicit list of output files (`outputs`). If
+# several machines/profiles share the same theme, just list all the
+# paths there.
 
-# Opcional: variables para no repetir rutas. `${repo}` se sustituye solo en
-# `outputs` y `skip_unless_path_exists` de cada target, y en `state_file`,
-# `palette_dirs` y `template_dirs` (nunca en reload, post_apply, patch ni
-# templates). Se pueden sobreescribir con `hueman --var repo=<ruta> ...`.
+# Optional: variables to avoid repeating paths. `${repo}` is substituted only
+# in each target's `outputs` and `skip_unless_path_exists`, and in `state_file`,
+# `palette_dirs` and `template_dirs` (never in reload, post_apply, patch or
+# templates). They can be overridden with `hueman --var repo=<path> ...`.
 # vars:
 #   repo: "~/dotfiles"
-# Uso: outputs: ["${repo}/kitty/theme.conf"]
+# Usage: outputs: ["${repo}/kitty/theme.conf"]
 
-# Dónde persistir el nombre de la paleta activa.
+# Where to persist the name of the active palette.
 state_file: "~/.config/hueman/current"
 
-# Paletas propias, además de las 25 empaquetadas dentro de hueman/palettes/.
-# Si una paleta custom tiene el mismo nombre que una empaquetada, gana la custom.
+# Your own palettes, in addition to the 25 packaged in hueman/palettes/.
+# If a custom palette has the same name as a packaged one, the custom one wins.
 palette_dirs:
   - "~/dotfiles/theme/palettes.custom"
 
-# Templates propios, para targets que la herramienta no trae por defecto.
+# Your own templates, for targets the tool does not ship by default.
 template_dirs:
   - "~/dotfiles/theme/templates.custom"
 
-# Politica cuando un comando `reload` o `post_apply` termina con codigo != 0:
-#   warn  (default) - se registra un warning y `set` sigue; exit 0.
-#   error           - se registra un error, se siguen ejecutando los demas
-#                     pasos (best-effort) y `set` termina con exit 1.
-# Cada target puede sobreescribirla con su propio `reload_failure`.
-# El codigo de salida de cada comando siempre se registra en el log.
+# Policy when a `reload` or `post_apply` command exits with a code != 0:
+#   warn  (default) - a warning is logged and `set` continues; exit 0.
+#   error           - an error is logged, the remaining steps still run
+#                     (best-effort) and `set` exits with 1.
+# Each target can override it with its own `reload_failure`.
+# Each command's exit code is always logged.
 reload_failure: warn
 
-# Opcional (opt-in): publica la paleta activa en la rama huerfana `hueman-state`
-# del remoto de tu repo de dotfiles ({palette, revision} en hueman.state.yaml,
-# un unico commit reescrito con force-with-lease). hueman usa un repo propio
-# (por defecto bajo $XDG_STATE_HOME/hueman/state-sync/) y nunca toca tu working
-# tree. Sin remoto, sin red o sin git, `set` aplica en local y avisa.
-# `set --dry-run` y `set --only` nunca escriben ni empujan estado.
+# Optional (opt-in): publishes the active palette to the orphan branch
+# `hueman-state` of your dotfiles repo's remote ({palette, revision} in
+# hueman.state.yaml, a single commit rewritten with force-with-lease). hueman
+# uses its own repo (by default under $XDG_STATE_HOME/hueman/state-sync/) and
+# never touches your working tree. Without a remote, network or git, `set`
+# applies locally and warns.
+# `set --dry-run` and `set --only` never write or push state.
 # state_sync:
 #   type: git                 # git (default) | file
-#   repo: "~/dotfiles"        # repo del que se toma la URL del remoto
+#   repo: "~/dotfiles"        # repo the remote URL is taken from
 #   remote: origin            # default
 #   branch: hueman-state      # default
-#   # workdir: "~/.local/state/hueman/state-sync/x.git"   # opcional
-#   # timeout: 15            # segundos por llamada git (default 15)
+#   # workdir: "~/.local/state/hueman/state-sync/x.git"   # optional
+#   # timeout: 15            # seconds per git call (default 15)
 #
-# Alternativa sin git: un archivo de estado en una carpeta que ya sincroniza
-# otra herramienta (Syncthing, Dropbox...). Escritura atomica; gana la mayor
-# revision. Si la carpeta no existe se considera inalcanzable (no se crea).
+# Alternative without git: a state file in a folder that another tool already
+# syncs (Syncthing, Dropbox...). Atomic write; the highest revision wins. If
+# the folder does not exist it is treated as unreachable (it is not created).
 # state_sync:
 #   type: file
 #   path: "~/Sync/hueman.state.yaml"
 
 targets:
-  # --- Ejemplo "overwrite": reemplaza el archivo entero.
+  # --- "overwrite" example: replaces the whole file.
   kitty:
     template: kitty.conf.j2
     palette_key: kitty
@@ -69,11 +70,11 @@ targets:
     outputs:
       - "~/.config/kitty/theme.conf"
     reload: "pgrep -x kitty >/dev/null 2>&1 && pkill -USR1 -x kitty || true"
-    # reload_failure: error   # override opcional de la politica global
+    # reload_failure: error   # optional override of the global policy
 
-  # --- Ejemplo "patch": splice regex sobre un archivo ya existente, sin
-  # tocar el resto de su contenido (útil para configs escritas a mano,
-  # como el prompt de starship).
+  # --- "patch" example: regex splice on an existing file, leaving the rest
+  # of its content untouched (useful for hand-written configs, such as the
+  # starship prompt).
   starship:
     template: starship_block.toml.j2
     palette_key: polybar
@@ -127,10 +128,11 @@ targets:
   #   outputs: ["${win_home}/AppData/Roaming/FlowLauncher/Themes/Hueman.xaml"]
   #   skip_unless_path_exists: "${win_home}/AppData/Roaming/FlowLauncher/Themes"
 
-  # --- Tema en la nube de Telegram (Android). Renderiza un .attheme y el
-  # reload lo sube con el script de ejemplo `examples/telegram/telegram-theme-sync`
-  # (copialo a una ruta tuya; necesita Telethon aparte, ver su README). Solo
-  # corre si existe la sesion; en segundo plano y con timeout para no bloquear.
+  # --- Telegram cloud theme (Android). Renders an .attheme and the reload
+  # uploads it with the example script `examples/telegram/telegram-theme-sync`
+  # (copy it to a path of your own; it needs Telethon separately, see its
+  # README). It only runs if the session exists, in the background and with a
+  # timeout so it does not block.
   # telegram_theme:
   #   template: telegram.attheme.j2
   #   palette_key: polybar
@@ -144,12 +146,12 @@ targets:
   #   outputs: ["~/.local/share/hueman/telegram/current.attheme"]
   #   reload: "[ -f ~/.config/hueman/telegram.session ] && (timeout 60 ~/.local/bin/telegram-theme-sync ~/.local/share/hueman/telegram/current.attheme >/dev/null 2>&1 &) || true"
 
-# Comandos que corren una sola vez al final de `set`, no por target.
-# No corren cuando se usa `set --only ...` (re-render parcial).
-# Los comandos de `reload` y `post_apply` admiten placeholders: `{name}`
-# (o `{palette}`) y `{seccion.clave}` (lookup en la paleta activa, ej.
-# `{kitty.color4}`); se sustituyen ya shell-quoted. `${VAR}` no se toca y
-# una clave con punto inexistente es un error.
+# Commands that run once at the end of `set`, not per target.
+# They do not run when `set --only ...` is used (partial re-render).
+# `reload` and `post_apply` commands accept placeholders: `{name}`
+# (or `{palette}`) and `{section.key}` (lookup in the active palette, e.g.
+# `{kitty.color4}`); they are substituted already shell-quoted. `${VAR}` is
+# left alone and a dotted key that does not exist is an error.
 post_apply:
   # - "python3 ~/x.py --name {name} --color {kitty.color4}"
   - "command -v oh-my-posh >/dev/null 2>&1 && oh-my-posh enable reload || true"

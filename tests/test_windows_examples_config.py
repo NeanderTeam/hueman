@@ -20,7 +20,7 @@ logger = logging.getLogger("hueman-tests")
 def _commented_targets(win_home):
     text = EXAMPLE_CFG.read_text()
     start = text.index("  # yasb_theme:")
-    end = text.index("\n\n# Comandos que corren una sola vez")
+    end = text.index("\n\n# Commands that run once")
     # Solo se descomenta lo que es YAML de target: el nombre (`  # nombre:`) y
     # su cuerpo (`  #   clave: ...`); la prosa comentada (`  # texto`) se descarta.
     names = "|".join(NAMES)

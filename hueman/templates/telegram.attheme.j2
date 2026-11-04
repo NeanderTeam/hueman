@@ -1,7 +1,7 @@
-{#- Generado desde la paleta activa por hueman (target telegram_theme).
-    Requiere palette_key: polybar y extra_vars: bg0h, bg2, blu, pur, aqu (kitty).
-    fg2 y dim no son variables de entrada: se derivan de `foreground` y `muted`
-    para no depender de secciones de otras herramientas (p. ej. `pi`). -#}
+{#- Generated from the active palette by hueman (target telegram_theme).
+    Requires palette_key: polybar and extra_vars: bg0h, bg2, blu, pur, aqu (kitty).
+    fg2 and dim are not input variables: they are derived from `foreground` and
+    `muted` so the template does not depend on sections of other tools (e.g. `pi`). -#}
 {%- macro argb(hex, a=255) -%}
 {%- set h = hex.lstrip('#') -%}
 {%- set v = a * 16777216 + (h[0:2] | int(base=16)) * 65536 + (h[2:4] | int(base=16)) * 256 + (h[4:6] | int(base=16)) -%}
