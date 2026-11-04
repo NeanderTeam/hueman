@@ -14,9 +14,8 @@ CLI layers (no per-app branching):
 | `hueman/engine/fsutil.py` | Atomic writes |
 | `hueman/engine/statesource.py` | StateSource (git / file) |
 
-Principle: **tool-specific logic lives in YAML + Jinja**, not Python branches.
-That is why [adding a tool](guides/add-a-tool.md) does not require patching the
-engine.
+Tool-specific logic lives in YAML and Jinja, not in Python branches, so
+[adding a tool](guides/add-a-tool.md) does not mean patching the engine.
 
 ## Self-contained repo
 

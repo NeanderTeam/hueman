@@ -1,9 +1,8 @@
 # Add support for a tool
 
-hueman does not know kitty, tmux, or whiptail by name. It only knows
-**declarative targets**: a Jinja template, a palette key, and a list of output
-files. That is why you can theme a new app **without touching the Python
-engine**.
+hueman has no built-in knowledge of kitty, tmux, or whiptail. A target is a
+Jinja template, a palette key, and a list of output files, and that is all it
+needs, so you can theme a new app without touching the Python engine.
 
 Two paths:
 
@@ -129,10 +128,10 @@ targets:
 
 Important rules:
 
-- **`outputs` is explicit**. hueman does not guess paths or hostnames.
-- **`mode: overwrite`** creates parents when needed (unless
+- `outputs` is explicit. hueman does not guess paths or hostnames.
+- `mode: overwrite` creates parents when needed (unless
   `skip_if_missing_parent`) and replaces the whole file with an atomic write.
-- **`mode: patch`** **does not create** missing files: if the destination does
+- `mode: patch` **does not create** missing files: if the destination does
   not exist, it is skipped. You need a valid `patch:` (`regex_splice` or
   `json_scheme_upsert`).
 - Several `outputs` receive the **same** render (useful to copy the theme to
