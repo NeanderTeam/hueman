@@ -19,6 +19,8 @@ All notable changes to this project are documented here.
 
 ### Features
 
+- Link tool chips and add posting, tuicr and sshub (2470faa)
+- Redesign landing with demo reel and windows screenshot (cf55395)
 - Add telegram attheme template (4a96746)
 - Add yasb and flow launcher themes (95c726a)
 
