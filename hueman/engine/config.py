@@ -30,7 +30,7 @@ def substitute_vars(text: str, variables: dict, where: str) -> str:
     def repl(match):
         name = match.group(1)
         if name not in variables:
-            raise ConfigError(f"variable '${{{name}}}' no definida (usada en {where})")
+            raise ConfigError(f"variable '${{{name}}}' is undefined (used in {where})")
         return variables[name]
 
     return _VAR_REF_RE.sub(repl, text)
@@ -49,15 +49,15 @@ def _validate_vars(path, raw_vars) -> dict:
     if raw_vars is None:
         return {}
     if not isinstance(raw_vars, dict):
-        raise ConfigError(f"{path}: 'vars' debe ser un mapeo nombre -> valor")
+        raise ConfigError(f"{path}: 'vars' must be a name-to-value mapping")
     for name, value in raw_vars.items():
         if not isinstance(name, str) or not VAR_NAME_RE.fullmatch(name):
-            raise ConfigError(f"{path}: nombre de variable invalido en 'vars': {name!r}")
+            raise ConfigError(f"{path}: invalid variable name in 'vars': {name!r}")
         if not isinstance(value, str):
-            raise ConfigError(f"{path}: vars.{name} debe ser un string, no {value!r}")
+            raise ConfigError(f"{path}: vars.{name} must be a string, not {value!r}")
         if _VAR_REF_RE.search(value):
             raise ConfigError(
-                f"{path}: vars.{name} no puede contener ${{...}} (las variables no se anidan)"
+                f"{path}: vars.{name} cannot contain ${{...}} (variables cannot be nested)"
             )
     return dict(raw_vars)
 
@@ -68,9 +68,9 @@ class HuemanConfig:
         try:
             raw = yaml.safe_load(path.read_text()) or {}
         except yaml.YAMLError as exc:
-            raise ConfigError(f"{path}: YAML invalido: {exc}") from exc
+            raise ConfigError(f"{path}: invalid YAML: {exc}") from exc
         if not isinstance(raw, dict):
-            raise ConfigError(f"{path}: se esperaba un mapeo YAML en la raiz")
+            raise ConfigError(f"{path}: expected a YAML mapping at the root")
         variables = _validate_vars(path, raw.get("vars"))
         variables.update(_validate_vars(path, var_overrides))
         try:
@@ -87,7 +87,7 @@ class HuemanConfig:
             if not isinstance(raw_targets, dict) or not all(
                 isinstance(v, dict) for v in raw_targets.values()
             ):
-                raise ConfigError(f"{path}: 'targets' debe ser un mapeo nombre -> definicion")
+                raise ConfigError(f"{path}: 'targets' must be a name-to-definition mapping")
             raw_targets = {
                 name: self._substitute_target(name, cfg, variables) for name, cfg in raw_targets.items()
             }
@@ -98,11 +98,11 @@ class HuemanConfig:
         try:
             self.targets = load_targets(raw_targets)
         except TypeError as exc:
-            raise ConfigError(f"{path}: target invalido: {exc}") from exc
+            raise ConfigError(f"{path}: invalid target: {exc}") from exc
         self.reload_failure = raw.get("reload_failure", "warn")
         if self.reload_failure not in FAILURE_POLICIES:
             raise ConfigError(
-                f"{path}: reload_failure debe ser 'warn' o 'error', no {self.reload_failure!r}"
+                f"{path}: reload_failure must be 'warn' or 'error', not {self.reload_failure!r}"
             )
         self.post_apply = self._validate_post_apply(path, raw.get("post_apply"))
         self.state_sync = self._load_state_sync(path, raw.get("state_sync"))
@@ -121,7 +121,7 @@ class HuemanConfig:
         if raw is None:
             return []
         if not isinstance(raw, list) or not all(isinstance(c, str) for c in raw):
-            raise ConfigError(f"{path}: 'post_apply' debe ser una lista de comandos (strings)")
+            raise ConfigError(f"{path}: 'post_apply' must be a list of command strings")
         return raw
 
     @staticmethod
@@ -130,24 +130,24 @@ class HuemanConfig:
         if raw is None:
             return {}
         if not isinstance(raw, dict):
-            raise ConfigError(f"{path}: 'logging' debe ser un mapeo (level, file)")
+            raise ConfigError(f"{path}: 'logging' must be a mapping (level, file)")
         level = raw.get("level", "INFO")
         if not isinstance(level, str) or not isinstance(
             logging.getLevelName(level.upper()), int
         ):
             raise ConfigError(
-                f"{path}: logging.level desconocido: {level!r} "
-                "(usa DEBUG, INFO, WARNING, ERROR o CRITICAL)"
+                f"{path}: unknown logging.level: {level!r} "
+                "(use DEBUG, INFO, WARNING, ERROR, or CRITICAL)"
             )
         log_file = raw.get("file")
         if log_file is not None:
             if not isinstance(log_file, str) or not log_file:
-                raise ConfigError(f"{path}: logging.file debe ser una ruta (string)")
+                raise ConfigError(f"{path}: logging.file must be a path string")
             parent = Path(log_file).expanduser().parent
             if not parent.is_dir():
-                raise ConfigError(f"{path}: logging.file: el directorio {parent} no existe")
+                raise ConfigError(f"{path}: logging.file: directory does not exist: {parent}")
             if not os.access(parent, os.W_OK | os.X_OK):
-                raise ConfigError(f"{path}: logging.file: no se puede escribir en {parent}")
+                raise ConfigError(f"{path}: logging.file: cannot write to {parent}")
         return {**raw, "level": level.upper()}
 
     @staticmethod

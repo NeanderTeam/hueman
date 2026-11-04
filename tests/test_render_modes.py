@@ -225,7 +225,7 @@ def test_overwrite_unknown_palette_key_logs_info_and_skips(tmp_path):
     assert render_target(env, target, "n", {"kitty": {}}, False, log) is False
     assert not out.exists()
     assert len(log.infos) == 1
-    assert "pi" in log.infos[0] and "la paleta no tiene la seccion 'pi'" in log.infos[0]
+    assert "pi" in log.infos[0] and "palette has no 'pi' section" in log.infos[0]
 
 
 def test_patch_unknown_palette_key_logs_info_and_skips(tmp_path):
@@ -239,7 +239,7 @@ def test_patch_unknown_palette_key_logs_info_and_skips(tmp_path):
     assert render_target(env, target, "n", {"kitty": {}}, False, log) is False
     assert out.read_text() == "orig\n"
     assert len(log.infos) == 1
-    assert "omp" in log.infos[0] and "la paleta no tiene la seccion 'omp'" in log.infos[0]
+    assert "omp" in log.infos[0] and "palette has no 'omp' section" in log.infos[0]
 
 
 def test_known_palette_key_does_not_log_missing_section(tmp_path):
@@ -249,4 +249,4 @@ def test_known_palette_key_does_not_log_missing_section(tmp_path):
     log = _InfoLog()
     assert render_target(env, target, "n", {"k": {}}, False, log) is True
     assert out.read_text() == "x"
-    assert not any("no tiene la seccion" in m for m in log.infos)
+    assert not any("palette has no" in m for m in log.infos)

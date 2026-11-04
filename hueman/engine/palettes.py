@@ -35,8 +35,8 @@ class PaletteLoader:
             for p in d.glob("*.yaml"):
                 if p.stem in found and found[p.stem] != p:
                     self.logger.warning(
-                        f"Paleta '{p.stem}' definida en más de un directorio, "
-                        f"gana la de mayor precedencia: {found[p.stem]}"
+                        f"Palette '{p.stem}' is defined in more than one directory; "
+                        f"using the higher-precedence definition: {found[p.stem]}"
                     )
                     continue
                 found.setdefault(p.stem, p)
@@ -45,8 +45,8 @@ class PaletteLoader:
     def load(self, name: str) -> dict:
         if not is_valid_palette_name(name):
             self.logger.error(
-                f"Nombre de paleta invalido: {name!r} "
-                "(solo letras, digitos, '.', '_' y '-'; debe empezar por letra o digito)"
+                f"Invalid palette name: {name!r} "
+                "(use letters, digits, '.', '_', or '-'; must start with a letter or digit)"
             )
             raise SystemExit(1)
         for d in self._search_dirs():
@@ -55,12 +55,12 @@ class PaletteLoader:
                 try:
                     data = yaml.safe_load(path.read_text())
                 except yaml.YAMLError as exc:
-                    self.logger.error(f"Paleta invalida {path}: {exc}")
+                    self.logger.error(f"Invalid palette {path}: {exc}")
                     raise SystemExit(1)
                 if not isinstance(data, dict):
-                    self.logger.error(f"Paleta invalida {path}: se esperaba un mapeo YAML")
+                    self.logger.error(f"Invalid palette {path}: expected a YAML mapping")
                     raise SystemExit(1)
                 return data
         available = ", ".join(self.list_palettes())
-        self.logger.error(f"Paleta no encontrada: {name}. Disponibles: {available}")
+        self.logger.error(f"Palette not found: {name}. Available: {available}")
         raise SystemExit(1)

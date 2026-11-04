@@ -158,7 +158,7 @@ def test_cli_unknown_placeholder_in_reload_fails_before_writing(tmp_path, monkey
     make_app(tmp_path, targets={"a": {}, "b": {"reload": "echo {kitty.nope}"}})
     assert _run_cli(tmp_path, monkeypatch) == 1
     err = capsys.readouterr().err
-    assert "Config invalida" in err and "{kitty.nope}" in err
+    assert "Invalid config" in err and "{kitty.nope}" in err
     assert "Traceback" not in err
     assert not (tmp_path / "a.out").exists() and not (tmp_path / "b.out").exists()
     assert not (tmp_path / "state").exists()
@@ -169,7 +169,7 @@ def test_cli_unknown_placeholder_in_post_apply_fails_cleanly(tmp_path, monkeypat
     make_app(tmp_path, targets={"a": {}}, post_apply=["echo {kitty.nope}"])
     assert _run_cli(tmp_path, monkeypatch, *extra) == 1
     err = capsys.readouterr().err
-    assert "Config invalida" in err and "{kitty.nope}" in err
+    assert "Invalid config" in err and "{kitty.nope}" in err
     assert "Traceback" not in err
     assert not (tmp_path / "a.out").exists() and not (tmp_path / "state").exists()
 
@@ -216,7 +216,7 @@ def test_sync_unknown_placeholder_fails_cleanly(tmp_path, capsys, where):
         a = _sync_app(tmp_path, targets={"k": {}}, post_apply=["echo {kitty.nope}"])
     assert a.sync() == (1, "failed")
     err = capsys.readouterr().err
-    assert "Config invalida" in err and "{kitty.nope}" in err
+    assert "Invalid config" in err and "{kitty.nope}" in err
     assert "Traceback" not in err
     assert not (tmp_path / "k.out").exists() and not (tmp_path / "state").exists()
     assert a.local_revision() is None
@@ -229,7 +229,7 @@ def test_sync_cli_quiet_unknown_placeholder_no_traceback(tmp_path, monkeypatch, 
         hueman.main()
     assert exc.value.code == 1
     err = capsys.readouterr().err
-    assert "Config invalida" in err and "Traceback" not in err
+    assert "Invalid config" in err and "Traceback" not in err
 
 
 def test_sync_valid_placeholders_still_apply(tmp_path):

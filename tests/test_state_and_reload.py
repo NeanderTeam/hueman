@@ -58,7 +58,7 @@ def test_status_reports_active_theme_palettes_and_target_counts(tmp_path, capsys
     )
     app.status()
     out = capsys.readouterr().out
-    assert "Tema activo: (ninguno)" in out
+    assert "Active theme: (none)" in out
     assert "one" in out and "two" in out
     assert "1/2 outputs" in out
 
@@ -122,4 +122,4 @@ def test_cli_missing_config_exits_one(tmp_path, monkeypatch, capsys):
     with pytest.raises(SystemExit) as exc:
         hueman.main()
     assert exc.value.code == 1
-    assert "Config no encontrada" in capsys.readouterr().err
+    assert "Config not found" in capsys.readouterr().err
