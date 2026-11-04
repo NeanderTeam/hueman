@@ -10,6 +10,7 @@ All notable changes to this project are documented here.
 
 ### Documentation
 
+- Add desktop screenshot to windows guide (949c197)
 - Add posting, tuicr and sshub chips with GitHub links (dd0e3ff)
 - Add yasb, flow launcher and telegram to windows guide (bc0bdc8)
 - Add telegram theme sync example and commented targets (da3bd7c)
