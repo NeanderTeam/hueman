@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="1" y="1" width="126" height="126" rx="28" fill="#222329" stroke="#3a3c44" stroke-width="2"/>
+  <!-- the ProxyJump chain: you, the jump host, the target you land on -->
+  <g transform="translate(12.8 12.8) scale(3.2)" stroke-width="2" stroke-linejoin="round">
+    <g fill="none" stroke="#e8eaec">
+      <rect x="2" y="13" width="6" height="6" rx="1.2"/>
+      <rect x="13" y="13" width="6" height="6" rx="1.2"/>
+      <path d="M8 16h5M19 16h5"/>
+    </g>
+    <rect x="24" y="13" width="6" height="6" rx="1.2" fill="#e0a84a" stroke="#e0a84a"/>
+  </g>
+</svg>
