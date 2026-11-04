@@ -4,12 +4,18 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Hide the inactive landing/docs view (d9942da)
+
 ### CI
 
 - Pin test runner to ubuntu-24.04 (a7e670d)
 
 ### Documentation
 
+- Translate windows examples to English (86062ea)
+- Tighten wording in docs and readme (0be51f9)
 - Add desktop screenshot to windows guide (949c197)
 - Add posting, tuicr and sshub chips with GitHub links (dd0e3ff)
 - Add yasb, flow launcher and telegram to windows guide (bc0bdc8)
