@@ -14,6 +14,7 @@ All notable changes to this project are documented here.
 
 ### Documentation
 
+- Tighten landing copy (c202939)
 - Translate windows examples to English (86062ea)
 - Tighten wording in docs and readme (0be51f9)
 - Add desktop screenshot to windows guide (949c197)
