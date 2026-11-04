@@ -1052,6 +1052,31 @@ body[data-view="landing"] .nav-toggle {
   filter: invert(1);
 }
 
+.landing__chips li:has(> a) {
+  padding: 0;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.landing__chips li a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem 0.3rem 0.5rem;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius);
+}
+
+.landing__chips li:has(> a):hover {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.landing__chips li a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .landing__chips li.landing__chip--custom {
   border-color: var(--accent);
   color: var(--accent);
