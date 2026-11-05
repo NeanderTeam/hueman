@@ -22,7 +22,7 @@ Run `python -m pytest -q` before opening the PR.
 
 ## Documentation
 
-The docs live in `website/content/latest` (written in Spanish).
+The docs live in `website/content/latest` (English, public product language).
 
 - Add a tool or target: [add-a-tool](website/content/latest/guides/add-a-tool.md)
 - Add a palette: [add-a-palette](website/content/latest/guides/add-a-palette.md)
@@ -33,15 +33,24 @@ templates, not in Python.
 ### Freezing docs for a release
 
 The site is static (`website/`, no build step). `content/latest` is the editable
-tip; each release gets a frozen copy. Page ids in `content/*/nav.json` are used
-as URLs (`?p=<id>`), so do not rename them.
+tip. Page ids in `content/*/nav.json` are used as URLs (`?p=<id>`), so do not
+rename them.
 
-1. Cut the release as usual.
-2. Copy `website/content/latest/` to `website/content/vX.Y.Z/`.
-3. Add an entry to `website/data/versions.json` with `channel: release`, the
-   `semver` and the release date as `updated`; bump `updated` on `latest`.
-4. Check that every nav id resolves, internal links work and the changelog has a
-   section for that tag.
+Docs freezes are **automatic** on release. When `release.yml` cuts a version it
+runs `scripts/freeze-docs.sh vX.Y.Z` before tagging, in the same
+`chore(release): vX.Y.Z` commit as the changelog. That script:
+
+1. Copies `website/content/latest/` → `website/content/vX.Y.Z/`
+2. Copies `website/skills/latest/` → `website/skills/vX.Y.Z/` when present
+3. Inserts the release entry in `website/data/versions.json` and marks the
+   previous release snapshot as `supported`
+
+Do **not** open a follow-up PR just to freeze docs. To dry-run locally:
+
+```bash
+./scripts/freeze-docs.sh vX.Y.Z
+# inspect, then discard the generated paths if you are not cutting a release
+```
 
 ## Security
 
