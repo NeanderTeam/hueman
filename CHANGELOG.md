@@ -2,6 +2,40 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Bug Fixes
+
+- Hide the inactive landing/docs view (d9942da)
+
+### CI
+
+- Bump actions/setup-python to v7.1.0 (5dcd83d)
+- Bump actions/checkout to v7.0.1 (1ae8dac)
+- Pin test runner to ubuntu-24.04 (a7e670d)
+
+### Chore
+
+- Sync main into dev after v0.3.1 (bdf7e6d)
+
+### Documentation
+
+- Translate telegram example and config comments to English (c946ebc)
+- Tighten landing copy (c202939)
+- Translate windows examples to English (86062ea)
+- Tighten wording in docs and readme (0be51f9)
+- Add desktop screenshot to windows guide (949c197)
+- Add posting, tuicr and sshub chips with GitHub links (dd0e3ff)
+- Add yasb, flow launcher and telegram to windows guide (bc0bdc8)
+- Add telegram theme sync example and commented targets (da3bd7c)
+
+### Features
+
+- Link tool chips and add posting, tuicr and sshub (2470faa)
+- Redesign landing with demo reel and windows screenshot (cf55395)
+- Add telegram attheme template (4a96746)
+- Add yasb and flow launcher themes (95c726a)
+
 ## [0.3.1] - 2026-11-05
 
 ### Documentation
