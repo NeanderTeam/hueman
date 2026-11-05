@@ -353,20 +353,38 @@ def _var_arg(text: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Centralized theme manager")
-    parser.add_argument("--version", action="version", version=f"hueman {__version__}")
-    parser.add_argument("--config", help="Config path (default: $HUEMAN_CONFIG or ~/.config/hueman/config.yaml)")
+    parser = argparse.ArgumentParser(
+        description="Apply named color palettes to declarative configuration targets."
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"hueman {__version__}",
+        help="Print the installed version and exit.",
+    )
+    parser.add_argument(
+        "--config",
+        metavar="PATH",
+        help="Use this config file instead of $HUEMAN_CONFIG or ~/.config/hueman/config.yaml.",
+    )
     parser.add_argument(
         "--var", action="append", type=_var_arg, default=[], metavar="NAME=VALUE",
-        help="Define or override a 'vars:' variable for ${NAME} in config paths "
-        "(repeatable).",
+        help="Override a config vars: value for ${NAME} in path fields (repeatable).", 
     )
     sub = parser.add_subparsers(dest="command")
 
-    set_p = sub.add_parser("set", help="Apply a theme")
-    set_p.add_argument("name")
-    set_p.add_argument("--dry-run", action="store_true")
-    set_p.add_argument("-v", "--verbose", action="store_true", help="Show per-path output details")
+    set_p = sub.add_parser(
+        "set",
+        help="Apply a palette to configured targets.",
+        description="Render a palette into configured targets, then run reload and post-apply hooks.",
+    )
+    set_p.add_argument("name", metavar="PALETTE", help="Palette name. Run `hueman list` to see choices.")
+    set_p.add_argument(
+        "--dry-run", action="store_true",
+        help="Show what would change without writing files or running reload hooks.",
+    )
+    set_p.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="Show each rendered path, reload command, and post-apply hook.",
+    )
     set_p.add_argument(
         "--only", action="append", metavar="NAME[,NAME...]",
         help="Limit to targets by name or glob (repeatable). Does not update "
@@ -374,17 +392,32 @@ def main():
     )
 
     sync_p = sub.add_parser(
-        "sync", help="Apply shared state if it is newer (safe during shell startup)")
-    sync_p.add_argument("-q", "--quiet", action="store_true",
-                        help="Show only real errors (hide network and config warnings)")
+        "sync",
+        help="Apply newer shared state.",
+        description="Apply shared state only when its revision is newer than the local revision.",
+    )
+    sync_p.add_argument(
+        "-q", "--quiet", action="store_true",
+        help="Hide network and configuration warnings; show only errors.",
+    )
 
     init_p = sub.add_parser(
-        "init", help="Write an example config to the default config path")
-    init_p.add_argument("--force", action="store_true",
-                        help="Overwrite the config if it already exists")
+        "init",
+        help="Write an example config file.",
+        description="Write the packaged example config to the resolved config path.",
+    )
+    init_p.add_argument("--force", action="store_true", help="Overwrite an existing config file.")
 
-    sub.add_parser("list", help="List available palettes")
-    sub.add_parser("status", help="Show the active theme and target status")
+    sub.add_parser(
+        "list",
+        help="List available palettes.",
+        description="List packaged and configured custom palettes in alphabetical order.",
+    )
+    sub.add_parser(
+        "status",
+        help="Show the active palette and target status.",
+        description="Show the active palette, available palettes, and configured target counts.",
+    )
 
     args = parser.parse_args()
     if not args.command:

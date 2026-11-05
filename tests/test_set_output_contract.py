@@ -67,5 +67,5 @@ def test_cli_help_uses_english_set_output_labels(monkeypatch, capsys):
 
     assert exc.value.code == 0
     output = capsys.readouterr().out
-    assert "Apply a theme" in output
+    assert "Apply a palette" in output
     assert "Aplicar un tema" not in output
