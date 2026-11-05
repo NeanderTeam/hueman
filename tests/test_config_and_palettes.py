@@ -39,7 +39,7 @@ def test_cwd_config_is_ignored(tmp_path, monkeypatch, isolated_home, capsys):
     with pytest.raises(SystemExit) as exc:
         hueman.main()
     assert exc.value.code == 1
-    assert "Config no encontrada" in capsys.readouterr().err
+    assert "Config not found" in capsys.readouterr().err
     assert not marker.exists()
 
 

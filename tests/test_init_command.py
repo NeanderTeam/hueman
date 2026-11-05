@@ -68,7 +68,7 @@ def test_missing_config_error_hints_init_and_docs(tmp_path, monkeypatch, capsys)
     code = run_main(monkeypatch, "--config", str(tmp_path / "nope.yaml"), "set", "gruvbox")
     err = capsys.readouterr().err
     assert code == 1
-    assert "Config no encontrada" in err
+    assert "Config not found" in err
     assert "hueman init" in err
     assert "https://hueman.cuevaneander.tech" in err
 

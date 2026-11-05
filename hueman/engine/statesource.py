@@ -163,12 +163,12 @@ class GitBranchSource(StateSource):
     def _prepare(self) -> bool:
         """Resolve the remote URL and make sure the private repo exists."""
         if shutil.which("git") is None:
-            self.log.warning("git no disponible: estado compartido deshabilitado")
+            self.log.warning("git is unavailable: shared state disabled")
             return False
         url = self._ok(["-C", str(self.repo), "remote", "get-url", self.remote],
                        git_dir=False) if self.repo.is_dir() else None
         if not url:
-            self.log.warning(f"remoto '{self.remote}' no disponible en {self.repo}")
+            self.log.warning(f"remote '{self.remote}' is unavailable in {self.repo}")
             return False
         self._url = url
         if self._workdir is None:
@@ -178,7 +178,7 @@ class GitBranchSource(StateSource):
         if not (self._workdir / "HEAD").exists():
             self._workdir.parent.mkdir(parents=True, exist_ok=True)
             if self._ok(["init", "--bare", "-q", str(self._workdir)], git_dir=False) is None:
-                self.log.warning(f"no se pudo crear el repo de estado en {self._workdir}")
+                self.log.warning(f"could not create state repository at {self._workdir}")
                 return False
         return True
 
@@ -186,14 +186,14 @@ class GitBranchSource(StateSource):
         """Refresh the remote tip. Returns (ok, sha-or-None)."""
         ls = self._ok(["ls-remote", self._url, f"refs/heads/{self.branch}"])
         if ls is None:
-            self.log.warning(f"remoto inalcanzable: {self._url}")
+            self.log.warning(f"remote is unreachable: {self._url}")
             return False, None
         if not ls:
             self._run(["update-ref", "-d", _REMOTE_REF])
             return True, None
         spec = f"+refs/heads/{self.branch}:{_REMOTE_REF}"
         if self._ok(["fetch", "-q", "--no-tags", self._url, spec]) is None:
-            self.log.warning(f"fetch fallo desde {self._url}")
+            self.log.warning(f"fetch failed from {self._url}")
             return False, None
         return True, self._ok(["rev-parse", _REMOTE_REF])
 
@@ -238,19 +238,19 @@ class GitBranchSource(StateSource):
             if remote is not None:
                 if remote.revision > state.revision:
                     self.log.warning(
-                        f"estado remoto mas nuevo (r{remote.revision} > r{state.revision}, "
-                        f"paleta {remote.palette}); no se publica")
+                        f"remote state is newer (r{remote.revision} > r{state.revision}, "
+                        f"theme {remote.palette}); not publishing")
                     return False
                 if remote == state:
                     return True
             sha = self._commit(state)
             if sha is None:
-                self.log.warning("no se pudo construir el commit de estado")
+                self.log.warning("could not create state commit")
                 return False
             if self._push(sha, remote_sha):
                 self._run(["update-ref", f"refs/heads/{self.branch}", sha])
                 return True
-        self.log.warning("push de estado rechazado repetidamente; se desiste")
+        self.log.warning("state push was repeatedly rejected; giving up")
         return False
 
 
@@ -289,21 +289,21 @@ class FileSource(StateSource):
     def write(self, state: State) -> bool:
         res = self.read_result()
         if not res.remote:
-            self.log.warning(f"carpeta de estado no disponible: {self.path.parent}")
+            self.log.warning(f"state directory is unavailable: {self.path.parent}")
             return False
         current = res.state
         if current is not None:
             if current.revision > state.revision:
                 self.log.warning(
-                    f"estado compartido mas nuevo (r{current.revision} > r{state.revision}, "
-                    f"paleta {current.palette}); no se publica")
+                    f"shared state is newer (r{current.revision} > r{state.revision}, "
+                    f"theme {current.palette}); not publishing")
                 return False
             if current == state:
                 return True
         try:
             atomic_write_text(self.path, dump_state(state))
         except OSError as exc:
-            self.log.warning(f"no se pudo escribir {self.path}: {exc}")
+            self.log.warning(f"could not write {self.path}: {exc}")
             return False
         return self.read() == state
 
@@ -323,13 +323,13 @@ class StateSyncConfigError(ValueError):
 
 def _parse_git(raw: dict) -> StateSyncSettings:
     if not isinstance(raw.get("repo"), str) or not raw["repo"]:
-        raise StateSyncConfigError("'state_sync' (type git) debe ser un mapeo con 'repo'")
+        raise StateSyncConfigError("'state_sync' (type git) must be a mapping with 'repo'")
     for key in ("remote", "branch", "workdir"):
         if key in raw and not isinstance(raw[key], str):
-            raise StateSyncConfigError(f"state_sync.{key} debe ser texto")
+            raise StateSyncConfigError(f"state_sync.{key} must be text")
     timeout = raw.get("timeout", GIT_TIMEOUT)
     if isinstance(timeout, bool) or not isinstance(timeout, int) or timeout <= 0:
-        raise StateSyncConfigError("state_sync.timeout debe ser un entero > 0 (segundos)")
+        raise StateSyncConfigError("state_sync.timeout must be an integer > 0 (seconds)")
     workdir = raw.get("workdir")
     return StateSyncSettings(
         repo=Path(raw["repo"]).expanduser(),
@@ -342,7 +342,7 @@ def _parse_git(raw: dict) -> StateSyncSettings:
 
 def _parse_file(raw: dict) -> FileSettings:
     if not isinstance(raw.get("path"), str) or not raw["path"]:
-        raise StateSyncConfigError("'state_sync' (type file) debe ser un mapeo con 'path'")
+        raise StateSyncConfigError("'state_sync' (type file) must be a mapping with 'path'")
     return FileSettings(path=Path(raw["path"]).expanduser())
 
 
@@ -357,11 +357,11 @@ DEFAULT_TYPE = "git"
 def parse_settings(raw):
     """Validate a `state_sync` mapping and return the backend's settings."""
     if not isinstance(raw, dict):
-        raise StateSyncConfigError("'state_sync' debe ser un mapeo")
+        raise StateSyncConfigError("'state_sync' must be a mapping")
     kind = raw.get("type", DEFAULT_TYPE)
     if not isinstance(kind, str) or kind not in SOURCE_TYPES:
         raise StateSyncConfigError(
-            f"state_sync.type desconocido: {kind!r} (validos: {', '.join(sorted(SOURCE_TYPES))})")
+            f"unknown state_sync.type: {kind!r} (valid: {', '.join(sorted(SOURCE_TYPES))})")
     return SOURCE_TYPES[kind][0](raw)
 
 

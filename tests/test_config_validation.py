@@ -37,7 +37,7 @@ def cli_fails_cleanly(tmp_path, monkeypatch, capsys, body):
         hueman.main()
     err = capsys.readouterr().err
     assert exit_info.value.code == 1
-    assert err.startswith("Config invalida:")
+    assert err.startswith("Invalid config:")
     assert "Traceback" not in err
     assert len(err.strip().splitlines()) == 1
 
@@ -123,7 +123,7 @@ def test_patch_must_be_mapping(tmp_path):
 
 def test_post_apply_string_is_rejected(tmp_path):
     msg = load_error(tmp_path, "post_apply: 'echo hi'\n" + base(tmp_path))
-    assert "post_apply" in msg and "lista" in msg
+    assert "post_apply" in msg and "list" in msg
 
 
 def test_post_apply_string_cli_exits_1(tmp_path, monkeypatch, capsys):
@@ -143,7 +143,7 @@ def test_post_apply_null_means_empty(tmp_path):
 def test_outputs_string_is_rejected(tmp_path):
     body = f"targets:\n  t:\n    template: x.j2\n    outputs: '{tmp_path}/o'\n"
     msg = load_error(tmp_path, body)
-    assert "outputs" in msg and "lista" in msg
+    assert "outputs" in msg and "list" in msg
 
 
 def test_outputs_string_cli_exits_1(tmp_path, monkeypatch, capsys):

@@ -165,7 +165,7 @@ def test_cli_undefined_var_exits_one_without_traceback(tmp_path, monkeypatch, ca
         run_cli(monkeypatch, "--config", str(cfg), "list")
     assert exc.value.code == 1
     err = capsys.readouterr().err
-    assert "Config invalida" in err and "repo" in err and "Traceback" not in err
+    assert "Invalid config" in err and "repo" in err and "Traceback" not in err
 
 
 @pytest.mark.parametrize("bad", ["novalue", "=x", "bad-name=1", "1a=2", ""])
