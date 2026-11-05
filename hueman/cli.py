@@ -8,7 +8,9 @@ dotfiles externo — todo el mapeo de rutas es explícito en ese config.
 import argparse
 import fnmatch
 import logging
+from collections import Counter
 import sys
+import threading
 from pathlib import Path
 
 from . import __version__
@@ -23,6 +25,51 @@ from .resources import packaged_example_config, packaged_palettes_dir, packaged_
 
 class UnknownTargetError(ValueError):
     """Un patron de --only no coincide con ningun target."""
+
+
+class _SetProgress:
+    """TTY-only progress bar for the quiet `set` path."""
+
+    _WIDTH = 24
+
+    def __init__(self, name: str, total: int, enabled: bool):
+        self.name = name
+        self.total = max(total, 1)
+        self.enabled = enabled
+        self.completed = 0
+        self.label = "Preparing"
+        self._stop = threading.Event()
+        self._lock = threading.Lock()
+        self._thread = None
+
+    def start(self) -> None:
+        if not self.enabled:
+            return
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def update(self, completed: int, label: str) -> None:
+        with self._lock:
+            self.completed = min(completed, self.total)
+            self.label = label
+
+    def _line(self) -> str:
+        with self._lock:
+            completed, label = self.completed, self.label
+        filled = round(self._WIDTH * completed / self.total)
+        bar = "█" * filled + "░" * (self._WIDTH - filled)
+        return f"Applying {self.name} [{bar}] {completed}/{self.total} · {label}"
+
+    def _run(self) -> None:
+        while not self._stop.wait(0.08):
+            print(f"\r\x1b[2K{self._line()}", end="", file=sys.stderr, flush=True)
+
+    def stop(self) -> None:
+        if not self.enabled:
+            return
+        self._stop.set()
+        self._thread.join()
+        print("\r\x1b[2K", end="", file=sys.stderr, flush=True)
 
 
 class Hueman:
@@ -58,7 +105,16 @@ class Hueman:
             )
         return [t for t in targets if any(fnmatch.fnmatchcase(t.name, p) for p in only)]
 
-    def set_theme(self, name: str, dry_run: bool = False, only=None, publish: bool = True) -> list:
+    @staticmethod
+    def _set_summary(name: str, stats: Counter, dry_run: bool) -> None:
+        action = "Dry run" if dry_run else "Applied"
+        print(
+            f"{action}: {name} "
+            f"(written: {stats['written']}, skipped: {stats['skipped']}, failed: {stats['failed']})"
+        )
+
+    def set_theme(self, name: str, dry_run: bool = False, only=None, publish: bool = True,
+                  verbose: bool = False) -> list:
         """Con `only` (patrones fnmatch) se renderizan solo los targets que
         coinciden y se dispara solo su reload; NO se escribe el state file ni
         corre post_apply (es una re-renderizacion parcial, no un cambio de tema).
@@ -78,18 +134,34 @@ class Hueman:
         if not only:
             post_apply = [expand_command(c, name, palette) for c in self.config.post_apply]
         failed = []
+        stats = Counter()
+        total_steps = sum(max(len(target.outputs), 1) for target in selected) + len(post_apply or [])
+        progress = _SetProgress(name, total_steps, enabled=not verbose and sys.stderr.isatty())
+        progress.start()
+        completed = 0
         for target in selected:
+            target_steps = max(len(target.outputs), 1)
+            progress.update(completed, f"Rendering {target.name}")
             env = self._jinja_env(target.jinja_delimiters)
             try:
-                wrote = render_target(env, target, name, palette, dry_run, self.config.logger)
+                wrote = render_target(
+                    env, target, name, palette, dry_run, self.config.logger, stats, verbose
+                )
             except TargetRenderError as exc:
                 self.config.logger.warning(f"{exc}; target skipped")
+                stats["failed"] += 1
                 failed.append(target.name)
+                completed += target_steps
                 continue
+            completed += target_steps
             if not dry_run and wrote and target.reload:
+                progress.update(completed, f"Reloading {target.name}")
                 cmd = expand_command(target.reload, name, palette)
-                rc = run_reload(cmd, self.config.logger)
+                rc = run_reload(cmd, self.config.logger, verbose=verbose) if verbose else run_reload(
+                    cmd, self.config.logger
+                )
                 if rc:
+                    stats["failed"] += 1
                     policy = target.reload_failure or self.config.reload_failure
                     self.config.logger.log(
                         logging.ERROR if policy == "error" else logging.WARNING,
@@ -99,18 +171,27 @@ class Hueman:
                         failed.append(target.name)
 
         if only:
+            progress.stop()
+            self._set_summary(name, stats, dry_run)
             return failed
 
         if dry_run:
-            for cmd in post_apply:
-                print(f"[DRY RUN] post_apply: {cmd}")
+            if verbose:
+                for cmd in post_apply:
+                    print(f"[DRY RUN] post_apply: {cmd}")
+            progress.stop()
+            self._set_summary(name, stats, dry_run)
             return failed
 
         self.config.state_file.parent.mkdir(parents=True, exist_ok=True)
         atomic_write_text(self.config.state_file, name + "\n")
-        self.config.logger.info(f"Active theme: {name}")
-        post_failed = run_post_apply(post_apply, self.config.logger) or []
+        progress.update(completed, "Running post-apply hooks")
+        post_failed = (
+            run_post_apply(post_apply, self.config.logger, verbose=verbose)
+            if verbose else run_post_apply(post_apply, self.config.logger)
+        ) or []
         for cmd, rc in post_failed:
+            stats["failed"] += 1
             error = self.config.reload_failure == "error"
             self.config.logger.log(
                 logging.ERROR if error else logging.WARNING,
@@ -118,8 +199,12 @@ class Hueman:
             )
         if post_failed and self.config.reload_failure == "error":
             failed.append("post_apply")
+        completed += len(post_apply)
+        progress.update(completed, "Finishing")
         if publish:
             self._publish_state(name)
+        progress.stop()
+        self._set_summary(name, stats, dry_run=False)
         return failed
 
     @property
@@ -281,6 +366,7 @@ def main():
     set_p = sub.add_parser("set", help="Apply a theme")
     set_p.add_argument("name")
     set_p.add_argument("--dry-run", action="store_true")
+    set_p.add_argument("-v", "--verbose", action="store_true", help="Show per-path output details")
     set_p.add_argument(
         "--only", action="append", metavar="NAME[,NAME...]",
         help="Limit to targets by name or glob (repeatable). Does not update "
@@ -329,7 +415,7 @@ def main():
     if args.command == "set":
         only = [p.strip() for v in args.only or [] for p in v.split(",") if p.strip()] or None
         try:
-            failed = tc.set_theme(args.name, args.dry_run, only=only)
+            failed = tc.set_theme(args.name, args.dry_run, only=only, verbose=args.verbose)
         except UnknownTargetError as e:
             print(str(e), file=sys.stderr)
             sys.exit(1)

@@ -60,33 +60,44 @@ def render_template(env: jinja2.Environment, target, name: str, palette: dict) -
     return env.get_template(target.template).render(**context)
 
 
-def _write(path: Path, content: str, dry_run: bool, logger, make_executable: bool = False):
+def _record(stats, outcome: str) -> None:
+    if stats is not None:
+        stats[outcome] += 1
+
+
+def _write(path: Path, content: str, dry_run: bool, logger, stats=None, verbose: bool = False,
+           make_executable: bool = False):
     if dry_run:
-        print(f"[DRY RUN] would write {path}")
-        return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(path, content, make_executable)
-    logger.info(f"Generated: {path}")
+        if verbose:
+            print(f"[DRY RUN] would write {path}")
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_text(path, content, make_executable)
+        if verbose:
+            logger.info(f"Generated: {path}")
+    _record(stats, "written")
 
 
-def _missing_palette_section(target, palette, logger) -> bool:
-    """True (con log INFO) si el target apunta a una seccion que la paleta no tiene."""
+def _missing_palette_section(target, palette, logger, stats=None) -> bool:
     if target.palette_key and target.palette_key not in palette:
-        logger.info(f"{target.name}: palette has no '{target.palette_key}' section; skipped")
+        logger.warning(f"{target.name}: palette has no '{target.palette_key}' section; skipped")
+        _record(stats, "skipped")
         return True
     return False
 
 
-def render_overwrite(env, target, name, palette, dry_run, logger) -> bool:
-    if _missing_palette_section(target, palette, logger):
+def render_overwrite(env, target, name, palette, dry_run, logger, stats=None, verbose: bool = False) -> bool:
+    if _missing_palette_section(target, palette, logger, stats):
         return False
     content = render_template(env, target, name, palette)
     wrote = False
     for out in target.outputs:
         if target.skip_if_missing_parent and not out.parent.exists():
-            logger.info(f"{target.name}: {out.parent} does not exist; skipped")
+            if verbose:
+                logger.info(f"{target.name}: {out.parent} does not exist; skipped")
+            _record(stats, "skipped")
             continue
-        _write(out, content, dry_run, logger, target.make_executable)
+        _write(out, content, dry_run, logger, stats, verbose, target.make_executable)
         wrote = True
     return wrote
 
@@ -176,9 +187,9 @@ def _apply_json_scheme_upsert(original: str, kitty: dict, scheme_name: str) -> s
     return json.dumps(data, indent=4, ensure_ascii=False) + "\n"
 
 
-def render_patch(env, target, name, palette, dry_run, logger) -> bool:
+def render_patch(env, target, name, palette, dry_run, logger, stats=None, verbose: bool = False) -> bool:
     patch = target.patch
-    if _missing_palette_section(target, palette, logger):
+    if _missing_palette_section(target, palette, logger, stats):
         return False
 
     if patch.strategy == "json_scheme_upsert":
@@ -187,7 +198,9 @@ def render_patch(env, target, name, palette, dry_run, logger) -> bool:
         wrote = False
         for out in target.outputs:
             if not out.exists():
-                logger.info(f"{target.name}: {out} not found; skipped")
+                if verbose:
+                    logger.info(f"{target.name}: {out} not found; skipped")
+                _record(stats, "skipped")
                 continue
             original = out.read_text(encoding="utf-8")
             try:
@@ -196,10 +209,13 @@ def render_patch(env, target, name, palette, dry_run, logger) -> bool:
                 raise TargetRenderError(f"{target.name}: {out} is not valid JSON ({exc})") from exc
             wrote = True
             if dry_run:
-                print(f"[DRY RUN] would write {out} (scheme '{scheme_name}')")
-                continue
-            atomic_write_text(out, content)
-            logger.info(f"{target.name}: scheme '{scheme_name}' updated in {out}")
+                if verbose:
+                    print(f"[DRY RUN] would write {out} (scheme '{scheme_name}')")
+            else:
+                atomic_write_text(out, content)
+                if verbose:
+                    logger.info(f"{target.name}: scheme '{scheme_name}' updated in {out}")
+            _record(stats, "written")
         return wrote
 
     # regex_splice
@@ -207,27 +223,33 @@ def render_patch(env, target, name, palette, dry_run, logger) -> bool:
     wrote = False
     for out in target.outputs:
         if target.skip_if_missing_parent and not out.parent.exists():
-            logger.info(f"{target.name}: {out.parent} does not exist; skipped")
+            if verbose:
+                logger.info(f"{target.name}: {out.parent} does not exist; skipped")
+            _record(stats, "skipped")
             continue
         if not out.exists():
-            logger.info(f"{target.name}: {out} not found; skipped")
+            if verbose:
+                logger.info(f"{target.name}: {out} not found; skipped")
+            _record(stats, "skipped")
             continue
         original = out.read_text()
         content = _apply_regex_splice(original, rendered, patch, logger)
-        _write(out, content, dry_run, logger, target.make_executable)
+        _write(out, content, dry_run, logger, stats, verbose, target.make_executable)
         wrote = True
     return wrote
 
 
-def render_target(env, target, name, palette, dry_run, logger) -> bool:
+def render_target(env, target, name, palette, dry_run, logger, stats=None, verbose: bool = False) -> bool:
     missing = [p for p in target.skip_unless_path_exists if not p.exists()]
     if missing:
-        logger.info(f"{target.name}: {missing[0]} does not exist; target skipped")
+        if verbose:
+            logger.info(f"{target.name}: {missing[0]} does not exist; target skipped")
+        _record(stats, "skipped")
         return False
     try:
         if target.mode == "overwrite":
-            return render_overwrite(env, target, name, palette, dry_run, logger)
-        return render_patch(env, target, name, palette, dry_run, logger)
+            return render_overwrite(env, target, name, palette, dry_run, logger, stats, verbose)
+        return render_patch(env, target, name, palette, dry_run, logger, stats, verbose)
     except jinja2.TemplateNotFound as exc:
         raise TargetRenderError(f"{target.name}: template {exc.name!r} not found") from exc
     except jinja2.exceptions.SecurityError as exc:
