@@ -31,10 +31,10 @@ These go before the subcommand.
 ## `init`
 
 Writes the packaged example config to the resolved config path
-(`--config`, `HUEMAN_CONFIG`, `./hueman.config.yaml`, or
-`~/.config/hueman/config.yaml`), creating missing directories. Works without an
-existing config. If the file already exists, exits 1 and leaves it alone unless
-`--force`.
+(`--config`, `HUEMAN_CONFIG`, or `~/.config/hueman/config.yaml`), creating
+missing directories. The current working directory is never searched. Works
+without an existing config. If the file already exists, exits 1 and leaves it
+alone unless `--force`.
 
 ## `list`
 
@@ -47,9 +47,15 @@ Renders every target, writes outputs, runs `reload` per target that actually
 wrote, then `post_apply`. Persists the palette name in `state_file`. With
 `state_sync`, publishes `{palette, revision}` (not on `--dry-run` or `--only`).
 
+Default terminal output is a short summary such as
+`Applied: <palette> (written: N, skipped: M, failed: K)` (or `Dry run: ...`).
+In an interactive TTY without `--verbose`, a progress bar shows the current
+target while work runs. Routine per-path success/skip lines stay hidden unless
+`-v` / `--verbose` is set. Failures and unexpected skips remain visible.
+
 | Flag | Effect |
 |------|--------|
-| `--dry-run` | No writes, no dirs, no real reload; prints a concise plan (use `-v` for paths) |
+| `--dry-run` | No writes, no dirs, no real reload; prints a concise plan (use `-v` for paths and expanded `post_apply`) |
 | `-v`, `--verbose` | Show each rendered path, reload command, and post-apply hook |
 | `--only` | Only targets whose name matches (comma or `fnmatch` glob). Does not write state or run `post_apply`. No match → exit 1 |
 

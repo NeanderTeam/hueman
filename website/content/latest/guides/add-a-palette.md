@@ -3,7 +3,7 @@
 A palette is a YAML file of color sections. hueman lists and loads by
 **file name** (without `.yaml`). The name may only contain letters, digits,
 `.`, `_`, and `-`, and must start with a letter or digit (no `..`, `/`, or
-spaces); `hueman set` rejects anything else with `Nombre de paleta invalido`
+spaces); `hueman set` rejects anything else with `Invalid palette name`
 (exit 1).
 
 ## Local path
@@ -51,7 +51,7 @@ Keep the **same keys** your templates use. A key the template asks for and the
 palette does not provide renders **empty**, with no error. Only an
 `extra_vars` path or a `json_scheme_upsert` section fails (warning + exit 1).
 If `palette_key` is not a section of the palette, the target is skipped with an
-INFO log (`la paleta no tiene la seccion '<key>', omitido`) and exit 0.
+WARNING log (`palette has no '<key>' section; skipped`) and exit 0.
 
 ## Upstream
 

@@ -20,7 +20,7 @@ A **target** declares how a template (or patch) reaches one or more files.
 | `patch` | Patch spec when `mode: patch` |
 
 If `palette_key` is not a section of the palette, the target is skipped with an
-INFO line `... la paleta no tiene la seccion '<key>', omitido` and no error
+WARNING line `... palette has no '<key>' section; skipped` and no error
 (exit 0). A missing template variable renders empty. Only a missing
 `extra_vars` path or a `json_scheme_upsert` section fails (warning + exit 1).
 

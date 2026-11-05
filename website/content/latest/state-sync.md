@@ -67,7 +67,7 @@ revision lives at `<state_file>.revision`; `state_file` remains only the
 palette name, and `set` updates the revision when publishing.
 
 If remote state names a palette that does not exist on this node, `sync`
-emits a notice (`la paleta remota '<name>' no esta disponible localmente`),
+emits a notice (`sync: remote palette '<name>' is unavailable locally`),
 writes nothing, does not advance the local revision, and exits 0
 (`unknown-palette`), so shell startup is not broken. Remote state whose
 palette name is invalid (path, `..`) is treated as unreadable remote state.

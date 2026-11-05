@@ -29,7 +29,7 @@ def expand_command(cmd: str, name: str, palette: dict) -> str:
         try:
             value = _dig(palette, key)
         except (KeyError, TypeError):
-            raise PlaceholderError(f"placeholder desconocido {{{key}}} en comando: {cmd}")
+            raise PlaceholderError(f"unknown placeholder {{{key}}} in command: {cmd}")
         return shlex.quote(str(value))
 
     return _PLACEHOLDER.sub(repl, cmd)
