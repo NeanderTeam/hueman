@@ -352,9 +352,21 @@ def _var_arg(text: str):
     return name, value
 
 
-def main():
+def _build_parser() -> argparse.ArgumentParser:
+    formatter = argparse.RawDescriptionHelpFormatter
     parser = argparse.ArgumentParser(
-        description="Apply named color palettes to declarative configuration targets."
+        prog="hueman",
+        description="Apply named color palettes to declarative configuration targets.",
+        formatter_class=formatter,
+        epilog=(
+            "examples:\n"
+            "  hueman init\n"
+            "  hueman list\n"
+            "  hueman set gruvbox --dry-run\n"
+            "  hueman set gruvbox\n"
+            "  hueman sync --quiet\n"
+            f"\nDocs: {DOCS_URL}"
+        ),
     )
     parser.add_argument(
         "--version", action="version", version=f"hueman {__version__}",
@@ -367,14 +379,22 @@ def main():
     )
     parser.add_argument(
         "--var", action="append", type=_var_arg, default=[], metavar="NAME=VALUE",
-        help="Override a config vars: value for ${NAME} in path fields (repeatable).", 
+        help="Override a config vars: value for ${NAME} in path fields (repeatable).",
     )
-    sub = parser.add_subparsers(dest="command")
+    sub = parser.add_subparsers(dest="command", title="commands", metavar="COMMAND")
 
     set_p = sub.add_parser(
         "set",
         help="Apply a palette to configured targets.",
         description="Render a palette into configured targets, then run reload and post-apply hooks.",
+        formatter_class=formatter,
+        epilog=(
+            "examples:\n"
+            "  hueman set gruvbox --dry-run\n"
+            "  hueman set gruvbox\n"
+            "  hueman set gruvbox --only kitty,starship\n"
+            "  hueman set gruvbox --verbose\n"
+        ),
     )
     set_p.add_argument("name", metavar="PALETTE", help="Palette name. Run `hueman list` to see choices.")
     set_p.add_argument(
@@ -395,6 +415,12 @@ def main():
         "sync",
         help="Apply newer shared state.",
         description="Apply shared state only when its revision is newer than the local revision.",
+        formatter_class=formatter,
+        epilog=(
+            "examples:\n"
+            "  hueman sync\n"
+            "  hueman sync --quiet\n"
+        ),
     )
     sync_p.add_argument(
         "-q", "--quiet", action="store_true",
@@ -405,6 +431,12 @@ def main():
         "init",
         help="Write an example config file.",
         description="Write the packaged example config to the resolved config path.",
+        formatter_class=formatter,
+        epilog=(
+            "examples:\n"
+            "  hueman init\n"
+            "  hueman init --force\n"
+        ),
     )
     init_p.add_argument("--force", action="store_true", help="Overwrite an existing config file.")
 
@@ -412,12 +444,21 @@ def main():
         "list",
         help="List available palettes.",
         description="List packaged and configured custom palettes in alphabetical order.",
+        formatter_class=formatter,
+        epilog=("examples:\n  hueman list\n"),
     )
     sub.add_parser(
         "status",
         help="Show the active palette and target status.",
         description="Show the active palette, available palettes, and configured target counts.",
+        formatter_class=formatter,
+        epilog=("examples:\n  hueman status\n"),
     )
+    return parser
+
+
+def main():
+    parser = _build_parser()
 
     args = parser.parse_args()
     if not args.command:
