@@ -61,9 +61,10 @@ hueman --config ~/dotfiles/theme/hueman.config.yaml set catppuccin-mocha --dry-r
 ```
 
 ```text
-[DRY RUN] would write ~/.config/kitty/theme.conf
-[DRY RUN] would write ~/.config/tmux/theme.conf
+Dry run: catppuccin-mocha (written: 2, skipped: 0, failed: 0)
 ```
+
+Add `-v` / `--verbose` if you want each path listed.
 
 ## 4. Apply
 
@@ -72,9 +73,7 @@ hueman --config ~/dotfiles/theme/hueman.config.yaml set catppuccin-mocha
 ```
 
 ```text
-INFO: Generated: ~/.config/kitty/theme.conf
-INFO: Generated: ~/.config/tmux/theme.conf
-INFO: Active theme: catppuccin-mocha
+Applied: catppuccin-mocha (written: 2, skipped: 0, failed: 0)
 ```
 
 ## How to tell it worked
@@ -86,7 +85,7 @@ hueman --config ~/dotfiles/theme/hueman.config.yaml status
 ```text
 Active theme: catppuccin-mocha
 Available palettes: arctic-ice, autumn, catppuccin-latte, catppuccin-mocha, ...
-Configured targets: 2 (2/2 outputs present on disk)
+Configured targets: 2 (2/2 outputs on disk)
 ```
 
 (The real palette line lists all 25 packaged ones; shortened here.)

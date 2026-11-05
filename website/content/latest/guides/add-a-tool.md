@@ -210,8 +210,8 @@ Example packaged targets live in `hueman/data/hueman.config.example.yaml` (or
 | `missing template …` in real-config tests | Template only exists as custom while something expects packaged; package it or align names |
 | Empty values in the file | Missing palette key, or `palette_key` pointing at the wrong key inside a valid section: Jinja renders empty |
 | Literal `{{ background }}` written out | Only with `jinja_delimiters` that do not match the template |
-| Target skipped | `palette_key` that is not a palette section (INFO `la paleta no tiene la seccion '<key>', omitido`) / `skip_unless_path_exists` / missing parent / patch on a missing file |
-| `Config invalida: placeholder desconocido` | Unknown `{section.key}` in `reload`/`post_apply`: `set` exits clean (exit 1) before writing |
+| Target skipped | `palette_key` that is not a palette section (WARNING `palette has no '<key>' section; skipped`) / `skip_unless_path_exists` / missing parent / patch on a missing file |
+| `Invalid config: unknown placeholder` | Unknown `{section.key}` in `reload`/`post_apply`: `set` exits clean (exit 1) before writing |
 | `set` exit 1 after reload | `reload_failure: error` and the reload command failed |
 | Patch does not apply or duplicates | `marker_regex` with no match: without `insert_after_section_regex` it appends the block, and it duplicates each run if your regex does not recognize that block (hueman warns); or missing `(?m)` if you use `^`/`$` in `ensure_after` |
 | Factory colors in newt/whiptail | Missing entries in the file: the format replaces the whole palette |

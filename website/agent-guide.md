@@ -80,16 +80,20 @@ depend on implicit resolution.
 **Sequence** (`p=quickstart`, `p=cli`):
 
 ```sh
+hueman --help                                  # root reference
+hueman set --help                              # subcommand flags and examples
 hueman --config <path> list                    # palettes, alphabetical
 hueman --config <path> status                  # active theme, outputs on disk
-hueman --config <path> set <palette> --dry-run # plan, no writes
+hueman --config <path> set <palette> --dry-run # concise plan, no writes
+hueman --config <path> set <palette> --dry-run -v  # per-path plan when needed
 hueman --config <path> set <palette>           # apply
 ```
 
-- `--dry-run` prints `[DRY RUN] escribiría <path>` per output and the
-  `post_apply` commands that would run. It does not write, create directories,
-  run `reload`, save `state_file`, or publish state. Show that list and wait
-  for approval.
+- Default `set` / `set --dry-run` print a short summary such as
+  `Applied: ... (written: N, skipped: M, failed: K)` or `Dry run: ...`.
+  Per-path and hook detail needs `-v` / `--verbose`. No writes, no reload,
+  no `state_file`, no publish on `--dry-run`. Prefer the concise plan first;
+  use `-v` when the human wants every path.
 - `set <palette> --only a,b` limits targets by name or `fnmatch` glob
   (repeatable flag). Does not save `state_file`, run `post_apply`, or publish.
   If nothing matches: exit 1 with the valid names. Use it to test a new target.
@@ -100,8 +104,8 @@ hueman --config <path> set <palette>           # apply
 
 Path resolution order: `--config`, `HUEMAN_CONFIG`, `~/.config/hueman/config.yaml`.
 The current directory is not searched (a config can run commands). If missing:
-`Config no encontrada: <path>`, exit 1. Invalid YAML or schema:
-`Config invalida: ...`, exit 1, no traceback.
+`Config not found: <path>`, exit 1. Invalid YAML or schema:
+`Invalid config: ...`, exit 1, no traceback.
 
 Top-level keys (`p=configuration`): `state_file`, `palette_dirs`,
 `template_dirs`, `reload_failure`, `state_sync` (`type: git` with
@@ -127,18 +131,18 @@ Gather first: config path in use, full output, exit code. Official summary:
 
 | Symptom | Cause (verified in code) | Check |
 |---|---|---|
-| `Config no encontrada` | No path in the resolution order exists | `echo "$HUEMAN_CONFIG"`; `hueman init` or pass `--config` |
-| Palette missing / `Paleta no encontrada` | File is not `.yaml`, dir absent from `palette_dirs`, or invalid YAML (`Paleta invalida`, exit 1) | `list`; the error lists available names |
-| `plantilla '<x>' no encontrada` | Wrong `.j2` name or outside `template_dirs`/`hueman/templates/`; target skipped, exit 1 | Exact file name |
-| Target does not write and no error | `skip_unless_path_exists` or `skip_if_missing_parent` not met; `patch` on a missing file; `--only` or `--dry-run` | INFO lines `omitido` / `no existe` |
-| INFO `... la paleta no tiene la seccion '<key>', omitido` | `palette_key` is not a top-level palette section (exit 0, not an error) | Compare `palette_key` with the YAML top-level keys |
-| `la paleta '<x>' no tiene la clave '<k>' requerida` | Missing `extra_vars` path or `json_scheme_upsert` key; target skipped, exit 1 | Add the key to the palette |
+| `Config not found` | No path in the resolution order exists | `echo "$HUEMAN_CONFIG"`; `hueman init` or pass `--config` |
+| Palette missing / `Palette not found` | File is not `.yaml`, dir absent from `palette_dirs`, or invalid YAML (`Invalid palette`, exit 1) | `list`; the error lists available names |
+| `template '<x>' not found` | Wrong `.j2` name or outside `template_dirs`/`hueman/templates/`; target skipped, exit 1 | Exact file name |
+| Target does not write and no error | `skip_unless_path_exists` or `skip_if_missing_parent` not met; `patch` on a missing file; `--only` or `--dry-run` | With `-v`, look for skip lines; default mode only shows the summary counts |
+| WARNING `... palette has no '<key>' section; skipped` | `palette_key` is not a top-level palette section (exit 0, not an error) | Compare `palette_key` with the YAML top-level keys |
+| `palette '<x>' lacks required key '<k>'` | Missing `extra_vars` path or `json_scheme_upsert` key; target skipped, exit 1 | Add the key to the palette |
 | Empty values in the output | Missing template variable in the section: Jinja renders empty, does not fail | Diff `.j2` variables against the section |
 | Literal `{{ ... }}` in the output | Delimiters other than expected | Target `jinja_delimiters` |
 | Patch duplicates the block | `marker_regex` with no match and no `insert_after_section_regex`: block is **appended**; if the regex still does not match the inserted block, hueman warns (cause is `marker_regex`) | Review the regex; `(?m)` if you use `^`/`$` in `ensure_after` |
-| Exit 1 with theme applied | Some target skipped on error, or `reload_failure: error` and a hook returned ≠ 0 | Messages `reload fallo (exit N)` / `post_apply fallo` |
-| Reload “does nothing” | Only runs after an effective write and without `--dry-run`; uses `sh -c` | Log shows `reload: <cmd> (exit N)`; have the human run it by hand |
-| `set` or `sync` fails with `Config invalida: placeholder desconocido` (before writing; `sync` does not advance revision) | Unknown `{section.key}` in `reload`/`post_apply` | Fix the key; shell `${VAR}` is left alone |
+| Exit 1 with theme applied | Some target skipped on error, or `reload_failure: error` and a hook returned ≠ 0 | Messages `reload failed (exit N)` / `post_apply failed`; summary `failed:` count |
+| Reload “does nothing” | Only runs after an effective write and without `--dry-run`; uses `sh -c` | With `-v`, log shows `reload: <cmd> (exit N)`; have the human run it by hand |
+| `set` or `sync` fails with `Invalid config: unknown placeholder` (before writing; `sync` does not advance revision) | Unknown `{section.key}` in `reload`/`post_apply` | Fix the key; shell `${VAR}` is left alone |
 | `sync` does not apply | Remote unreachable, no state, remote palette missing locally (notice, exit 0, revision not advanced) or invalid name, or local revision >= remote (never applies cache) | `status`, `Drift:` line (`in sync`, `behind`, `ahead`, `no remote state`, `remote unreachable`); `type: file` folder is not created |
 
 ## Rules for you
@@ -146,9 +150,9 @@ Gather first: config path in use, full output, exit code. Official summary:
 - Do not invent flags, keys, target fields, or paths. If it is not here, in the
   docs, or in the code, it does not exist; read `hueman/cli.py` or
   `hueman/engine/*.py` and say so.
-- Always propose `--dry-run` first and show the paths before a real `set`. Ask
-  confirmation for anything that writes outside the project (`set`, `sync`,
-  creating config under `~`).
+- Always propose `--dry-run` first. Show the concise summary; use `-v` when the
+  human needs every path. Ask confirmation for anything that writes outside the
+  project (`set`, `sync`, creating config under `~`).
 - Do not write real user paths or secrets into the hueman repo; use
   `hueman.config.example.yaml` or temp fixtures.
 - `reload` and `post_apply` are best-effort: do not use them as validation;
