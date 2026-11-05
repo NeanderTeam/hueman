@@ -1,10 +1,20 @@
 # CLI
 
+The live quick reference is the CLI itself:
+
+```sh
+hueman --help
+hueman <command> --help
+```
+
+That covers globals, every subcommand, flags, and short examples. This page is
+the longer guide (behavior and exit codes).
+
 ```text
 hueman [--config PATH] init [--force]
 hueman [--config PATH] [--var NAME=VALUE ...] list
 hueman [--config PATH] [--var NAME=VALUE ...] status
-hueman [--config PATH] [--var NAME=VALUE ...] set <palette> [--dry-run] [--only NAME[,NAME...]]
+hueman [--config PATH] [--var NAME=VALUE ...] set <palette> [--dry-run] [-v|--verbose] [--only NAME[,NAME...]]
 hueman [--config PATH] [--var NAME=VALUE ...] sync [-q|--quiet]
 ```
 
@@ -21,10 +31,10 @@ These go before the subcommand.
 ## `init`
 
 Writes the packaged example config to the resolved config path
-(`--config`, `HUEMAN_CONFIG`, `./hueman.config.yaml`, or
-`~/.config/hueman/config.yaml`), creating missing directories. Works without an
-existing config. If the file already exists, exits 1 and leaves it alone unless
-`--force`.
+(`--config`, `HUEMAN_CONFIG`, or `~/.config/hueman/config.yaml`), creating
+missing directories. The current working directory is never searched. Works
+without an existing config. If the file already exists, exits 1 and leaves it
+alone unless `--force`.
 
 ## `list`
 
@@ -37,9 +47,16 @@ Renders every target, writes outputs, runs `reload` per target that actually
 wrote, then `post_apply`. Persists the palette name in `state_file`. With
 `state_sync`, publishes `{palette, revision}` (not on `--dry-run` or `--only`).
 
+Default terminal output is a short summary such as
+`Applied: <palette> (written: N, skipped: M, failed: K)` (or `Dry run: ...`).
+In an interactive TTY without `--verbose`, a progress bar shows the current
+target while work runs. Routine per-path success/skip lines stay hidden unless
+`-v` / `--verbose` is set. Failures and unexpected skips remain visible.
+
 | Flag | Effect |
 |------|--------|
-| `--dry-run` | No writes, no dirs, no real reload; prints the plan |
+| `--dry-run` | No writes, no dirs, no real reload; prints a concise plan (use `-v` for paths and expanded `post_apply`) |
+| `-v`, `--verbose` | Show each rendered path, reload command, and post-apply hook |
 | `--only` | Only targets whose name matches (comma or `fnmatch` glob). Does not write state or run `post_apply`. No match → exit 1 |
 
 If a target fails because the palette lacks a key it needs (`palette_key` with
@@ -56,7 +73,7 @@ Active palette and, with `state_sync`, revisions and drift (`in sync`, `behind`,
 Pulls remote state and applies when the remote revision is higher. Meant for
 shell startup (`-q`). No network / no `state_sync` → exit 0 with a notice. An
 unknown placeholder in `reload`/`post_apply` yields the same clean
-`Config invalida` error (exit 1, no traceback) and the revision does not
+`Invalid config` error (exit 1, no traceback) and the revision does not
 advance. If the remote palette is missing locally (or its name is invalid),
 `sync` warns, does not advance the revision, and exits 0.
 

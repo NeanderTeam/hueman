@@ -1,12 +1,12 @@
-# EJEMPLO para adaptar (no es parte del producto hueman).
-# Que hace: instalador de una sola vez. Copia windhawk-taskbar-apply.ps1 a
-# $env:ProgramData\DotfilesTheme (carpeta solo escribible por administradores)
-# y registra una tarea programada de disparo manual con RunLevel Highest, para
-# que hueman (desde WSL) la lance con `schtasks.exe /run /tn <NombreTarea>`
-# sin prompt de UAC. Con -Uninstall elimina la tarea y la carpeta.
-# Requiere elevacion: ejecutalo desde un PowerShell como Administrador, con
-# windhawk-taskbar-apply.ps1 en la misma carpeta.
-# Sin probar en este repo: revisa el script antes de ejecutarlo.
+# EXAMPLE to adapt (not part of the hueman product).
+# What it does: one-time installer. Copies windhawk-taskbar-apply.ps1 to
+# $env:ProgramData\DotfilesTheme (a folder only administrators can write to)
+# and registers a manually triggered scheduled task with RunLevel Highest, so
+# that hueman (from WSL) can launch it with `schtasks.exe /run /tn <TaskName>`
+# without a UAC prompt. With -Uninstall it removes the task and the folder.
+# Requires elevation: run it from a PowerShell as Administrator, with
+# windhawk-taskbar-apply.ps1 in the same folder.
+# Not tested in this repo: review the script before running it.
 <#
 .SYNOPSIS
   One-time installer: registers a scheduled task that applies taskbar colors

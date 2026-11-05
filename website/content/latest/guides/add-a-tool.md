@@ -1,9 +1,8 @@
 # Add support for a tool
 
-hueman does not know kitty, tmux, or whiptail by name. It only knows
-**declarative targets**: a Jinja template, a palette key, and a list of output
-files. That is why you can theme a new app **without touching the Python
-engine**.
+hueman has no built-in knowledge of kitty, tmux, or whiptail. A target is a
+Jinja template, a palette key, and a list of output files, and that is all it
+needs, so you can theme a new app without touching the Python engine.
 
 Two paths:
 
@@ -129,10 +128,10 @@ targets:
 
 Important rules:
 
-- **`outputs` is explicit**. hueman does not guess paths or hostnames.
-- **`mode: overwrite`** creates parents when needed (unless
+- `outputs` is explicit. hueman does not guess paths or hostnames.
+- `mode: overwrite` creates parents when needed (unless
   `skip_if_missing_parent`) and replaces the whole file with an atomic write.
-- **`mode: patch`** **does not create** missing files: if the destination does
+- `mode: patch` **does not create** missing files: if the destination does
   not exist, it is skipped. You need a valid `patch:` (`regex_splice` or
   `json_scheme_upsert`).
 - Several `outputs` receive the **same** render (useful to copy the theme to
@@ -211,8 +210,8 @@ Example packaged targets live in `hueman/data/hueman.config.example.yaml` (or
 | `missing template …` in real-config tests | Template only exists as custom while something expects packaged; package it or align names |
 | Empty values in the file | Missing palette key, or `palette_key` pointing at the wrong key inside a valid section: Jinja renders empty |
 | Literal `{{ background }}` written out | Only with `jinja_delimiters` that do not match the template |
-| Target skipped | `palette_key` that is not a palette section (INFO `la paleta no tiene la seccion '<key>', omitido`) / `skip_unless_path_exists` / missing parent / patch on a missing file |
-| `Config invalida: placeholder desconocido` | Unknown `{section.key}` in `reload`/`post_apply`: `set` exits clean (exit 1) before writing |
+| Target skipped | `palette_key` that is not a palette section (WARNING `palette has no '<key>' section; skipped`) / `skip_unless_path_exists` / missing parent / patch on a missing file |
+| `Invalid config: unknown placeholder` | Unknown `{section.key}` in `reload`/`post_apply`: `set` exits clean (exit 1) before writing |
 | `set` exit 1 after reload | `reload_failure: error` and the reload command failed |
 | Patch does not apply or duplicates | `marker_regex` with no match: without `insert_after_section_regex` it appends the block, and it duplicates each run if your regex does not recognize that block (hueman warns); or missing `(?m)` if you use `^`/`$` in `ensure_after` |
 | Factory colors in newt/whiptail | Missing entries in the file: the format replaces the whole palette |

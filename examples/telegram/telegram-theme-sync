@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+# EXAMPLE to adapt (not part of the hueman product or the pip package).
+# Untested in this repo: review the script before running it.
+"""Upload an .attheme file to an existing Telegram cloud theme.
+
+Usage: telegram-theme-sync <file.attheme> [--slug SLUG] [--login]
+
+Requires Telethon in a separate venv (hueman does not install it):
+    python3 -m venv ~/.local/share/hueman-telegram
+    ~/.local/share/hueman-telegram/bin/pip install telethon
+and run this script with that venv's python.
+
+Files (config directory: $HUEMAN_TELEGRAM_DIR or ~/.config/hueman):
+    telegram.env      TG_API_ID, TG_API_HASH and, optionally, TG_THEME_SLUG (mode 600)
+    telegram.session  Telethon session, created by --login (mode 600)
+
+The slug is the last part of t.me/addtheme/<slug>; the account that runs the
+script must be the one that created the theme.
+"""
+import argparse
+import asyncio
+import os
+import sys
+from pathlib import Path
+
+from telethon import TelegramClient
+from telethon.tl.functions.account import GetThemeRequest, UpdateThemeRequest
+from telethon.tl.functions.messages import SendMediaRequest
+from telethon.tl.types import (
+    DocumentAttributeFilename,
+    InputDocument,
+    InputMediaUploadedDocument,
+    InputPeerSelf,
+    InputTheme,
+    InputThemeSlug,
+)
+
+CONF = Path(os.environ.get("HUEMAN_TELEGRAM_DIR", "~/.config/hueman")).expanduser()
+ENV_FILE = CONF / "telegram.env"
+SESSION = CONF / "telegram.session"
+FORMAT = "android"
+
+
+def load_env(path: Path) -> dict:
+    env = {}
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            env[k.strip()] = v.strip()
+    return env
+
+
+async def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("file", type=Path, nargs="?")
+    ap.add_argument("--slug", help="theme slug (or TG_THEME_SLUG in telegram.env)")
+    ap.add_argument("--login", action="store_true", help="only authenticate, then exit")
+    args = ap.parse_args()
+
+    if not ENV_FILE.is_file():
+        print(f"error: missing {ENV_FILE} (TG_API_ID, TG_API_HASH)", file=sys.stderr)
+        return 2
+    env = load_env(ENV_FILE)
+    slug = args.slug or env.get("TG_THEME_SLUG")
+
+    client = TelegramClient(str(SESSION), int(env["TG_API_ID"]), env["TG_API_HASH"])
+    await client.start()  # interactive only the first time
+    # Telethon already appends ".session" to the name; SESSION is the full path.
+    os.chmod(SESSION, 0o600)
+
+    if args.login:
+        print("login ok")
+        await client.disconnect()
+        return 0
+
+    if not args.file or not args.file.is_file():
+        print("error: an .attheme file is required", file=sys.stderr)
+        return 2
+    if not slug:
+        print("error: missing slug (--slug or TG_THEME_SLUG)", file=sys.stderr)
+        return 2
+
+    theme = await client(GetThemeRequest(format=FORMAT, theme=InputThemeSlug(slug=slug)))
+    me = await client.get_me()
+    if not theme.creator:  # the flag is only set when the account owns the theme
+        print("error: this account is not the creator of the theme", file=sys.stderr)
+        return 3
+
+    # Upload as a document (via Saved Messages) to get an InputDocument.
+    # The mime must be application/x-tgtheme-android: with a guessed mime,
+    # account.updateTheme answers ThemeMimeInvalidError (hence no send_file).
+    uploaded = await client.upload_file(args.file)
+    sent = await client(
+        SendMediaRequest(
+            peer=InputPeerSelf(),
+            media=InputMediaUploadedDocument(
+                file=uploaded,
+                mime_type="application/x-tgtheme-android",
+                attributes=[DocumentAttributeFilename(file_name=args.file.name)],
+                force_file=True,
+            ),
+            message="",
+            random_id=int.from_bytes(os.urandom(8), "big", signed=True),
+            silent=True,
+        )
+    )
+    msg = next(u.message for u in sent.updates if hasattr(u, "message") and hasattr(u.message, "media"))
+    doc = msg.media.document
+    try:
+        await client(
+            UpdateThemeRequest(
+                format=FORMAT,
+                theme=InputTheme(id=theme.id, access_hash=theme.access_hash),
+                document=InputDocument(
+                    id=doc.id, access_hash=doc.access_hash, file_reference=doc.file_reference
+                ),
+            )
+        )
+    finally:
+        await client.delete_messages("me", [msg.id])  # keep Saved Messages clean
+
+    print(f"theme '{theme.title}' ({slug}) updated for user {me.id}")
+    await client.disconnect()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(asyncio.run(main()))

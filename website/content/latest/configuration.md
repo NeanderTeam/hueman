@@ -34,13 +34,13 @@ Commands accept `{name}` (alias `{palette}`) and `{section.key}` (dotted
 lookup in the active palette, e.g. `{kitty.color4}`). Values are inserted with
 `shlex.quote`. `${VAR}`, `$(...)`, and braces without a dot (e.g.
 `find -exec {} +`) are left alone. An unknown `{section.key}` yields a clean
-`Config invalida` error (exit 1) before writing anything.
+`Invalid config` error (exit 1) before writing anything.
 
 ```yaml
 reload: "python3 ~/x.py --name {name} --color {kitty.color4}"
 ```
 
-With `set --dry-run`, expanded `post_apply` commands are printed.
+With `set --dry-run --verbose`, expanded `post_apply` commands are printed.
 
 ## `reload` / `post_apply` failures
 
@@ -104,7 +104,7 @@ Rules:
   `extra_vars`, or template bodies (in `reload`/`post_apply`, `${VAR}` remains
   shell).
 - An undefined `${name}` in a path key is a config error
-  (`Config invalida: ...`, exit 1) that names the variable and where it was used.
+  (`Invalid config: ...`, exit 1) that names the variable and where it was used.
 - Values may include `~`, but do not nest: a `${...}` inside a variable value
   is an error.
 - A `$` that is not exactly `${name}` (e.g. `$HOME`) is left as-is.

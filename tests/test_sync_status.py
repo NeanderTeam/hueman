@@ -202,7 +202,7 @@ def status_out(a, capsys):
 
 def test_status_without_state_sync_unchanged(tmp_path, capsys):
     out = status_out(make_app(tmp_path, targets={"k": {}}), capsys)
-    assert "Tema activo" in out and "Drift" not in out
+    assert "Active theme" in out and "Drift" not in out
 
 
 @pytest.mark.parametrize("local,remote_rev,label", [
@@ -260,7 +260,7 @@ def test_cli_sync_quiet_flag_silences_notices(tmp_path, dotfiles, monkeypatch, c
     app(tmp_path, dotfiles)
     git("remote", "set-url", "origin", f"file://{tmp_path}/gone.git", cwd=dotfiles)
     assert run_cli(monkeypatch, tmp_path, "sync") == 0
-    assert "inalcanzable" in caplog.text  # without --quiet the offline notice shows
+    assert "unreachable" in caplog.text  # without --quiet the offline notice shows
     caplog.clear()
     assert run_cli(monkeypatch, tmp_path, "sync", "--quiet") == 0
     assert caplog.text == ""

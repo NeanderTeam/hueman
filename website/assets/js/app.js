@@ -14,7 +14,7 @@
     landing: {
       title: "hueman: one palette, every tool",
       description:
-        "One palette. Every tool. Apply one theme across kitty, nvim, tmux, starship, and whatever you declare — one command.",
+        "One palette. Every tool. Apply one theme across kitty, nvim, tmux, starship, and whatever you declare with one command.",
     },
     docs: {
       title: "hueman: docs",
@@ -60,11 +60,18 @@
 
   const THEME_KEY = "hueman-docs-theme";
 
-  function applyTheme(name) {
+  function applyTheme(name, { trail } = {}) {
     document.documentElement.setAttribute("data-theme", name);
     els.themes.querySelectorAll("[data-theme-set]").forEach((btn) => {
       btn.setAttribute("aria-checked", String(btn.dataset.themeSet === name));
     });
+    if (trail && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.body.classList.remove("theme-trail");
+      // reflow so the afterimage animation can restart
+      void document.body.offsetWidth;
+      document.body.classList.add("theme-trail");
+      window.setTimeout(() => document.body.classList.remove("theme-trail"), 700);
+    }
   }
 
   function initThemes() {
@@ -72,7 +79,7 @@
     els.themes.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-theme-set]");
       if (!btn) return;
-      applyTheme(btn.dataset.themeSet);
+      applyTheme(btn.dataset.themeSet, { trail: true });
       try {
         localStorage.setItem(THEME_KEY, btn.dataset.themeSet);
       } catch (_) {
@@ -843,5 +850,62 @@
     }
   }
 
+
+  // Demo reel: autoplay only while visible, honor reduced motion and manual pause.
+  function initReel() {
+    const video = document.querySelector(".reel__video");
+    const toggle = document.getElementById("reel-toggle");
+    const landing = document.getElementById("landing");
+    if (!video || !toggle) return;
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let userPaused = reduced;
+    let visible = false;
+
+    const sync = () => {
+      const paused = video.paused;
+      toggle.textContent = paused ? "Play" : "Pause";
+      toggle.setAttribute("aria-pressed", String(paused));
+    };
+    const play = () => {
+      const p = video.play();
+      if (p && p.catch) p.catch(() => {});
+    };
+    const update = () => {
+      const show = visible && !userPaused && landing && !landing.hidden;
+      if (show) play();
+      else video.pause();
+    };
+
+    if (reduced) {
+      video.removeAttribute("autoplay");
+      video.pause();
+    }
+    video.addEventListener("play", sync);
+    video.addEventListener("pause", sync);
+    toggle.addEventListener("click", () => {
+      userPaused = !video.paused;
+      if (userPaused) video.pause();
+      else {
+        visible = true;
+        play();
+      }
+    });
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(
+        (entries) => {
+          visible = entries[entries.length - 1].isIntersecting;
+          update();
+        },
+        { threshold: 0.35 }
+      ).observe(video);
+    }
+    if (landing && "MutationObserver" in window) {
+      new MutationObserver(update).observe(landing, { attributes: true, attributeFilter: ["hidden"] });
+    }
+    sync();
+  }
+
+  initReel();
   boot();
 })();

@@ -8,7 +8,9 @@ dotfiles externo — todo el mapeo de rutas es explícito en ese config.
 import argparse
 import fnmatch
 import logging
+from collections import Counter
 import sys
+import threading
 from pathlib import Path
 
 from . import __version__
@@ -23,6 +25,51 @@ from .resources import packaged_example_config, packaged_palettes_dir, packaged_
 
 class UnknownTargetError(ValueError):
     """Un patron de --only no coincide con ningun target."""
+
+
+class _SetProgress:
+    """TTY-only progress bar for the quiet `set` path."""
+
+    _WIDTH = 24
+
+    def __init__(self, name: str, total: int, enabled: bool):
+        self.name = name
+        self.total = max(total, 1)
+        self.enabled = enabled
+        self.completed = 0
+        self.label = "Preparing"
+        self._stop = threading.Event()
+        self._lock = threading.Lock()
+        self._thread = None
+
+    def start(self) -> None:
+        if not self.enabled:
+            return
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def update(self, completed: int, label: str) -> None:
+        with self._lock:
+            self.completed = min(completed, self.total)
+            self.label = label
+
+    def _line(self) -> str:
+        with self._lock:
+            completed, label = self.completed, self.label
+        filled = round(self._WIDTH * completed / self.total)
+        bar = "█" * filled + "░" * (self._WIDTH - filled)
+        return f"Applying {self.name} [{bar}] {completed}/{self.total} · {label}"
+
+    def _run(self) -> None:
+        while not self._stop.wait(0.08):
+            print(f"\r\x1b[2K{self._line()}", end="", file=sys.stderr, flush=True)
+
+    def stop(self) -> None:
+        if not self.enabled:
+            return
+        self._stop.set()
+        self._thread.join()
+        print("\r\x1b[2K", end="", file=sys.stderr, flush=True)
 
 
 class Hueman:
@@ -53,12 +100,21 @@ class Hueman:
         missing = [p for p in only if not fnmatch.filter(names, p)]
         if missing:
             raise UnknownTargetError(
-                f"--only sin coincidencias: {', '.join(missing)}. "
-                f"Targets validos: {', '.join(names)}"
+                f"--only matched no targets: {', '.join(missing)}. "
+                f"Available targets: {', '.join(names)}"
             )
         return [t for t in targets if any(fnmatch.fnmatchcase(t.name, p) for p in only)]
 
-    def set_theme(self, name: str, dry_run: bool = False, only=None, publish: bool = True) -> list:
+    @staticmethod
+    def _set_summary(name: str, stats: Counter, dry_run: bool) -> None:
+        action = "Dry run" if dry_run else "Applied"
+        print(
+            f"{action}: {name} "
+            f"(written: {stats['written']}, skipped: {stats['skipped']}, failed: {stats['failed']})"
+        )
+
+    def set_theme(self, name: str, dry_run: bool = False, only=None, publish: bool = True,
+                  verbose: bool = False) -> list:
         """Con `only` (patrones fnmatch) se renderizan solo los targets que
         coinciden y se dispara solo su reload; NO se escribe el state file ni
         corre post_apply (es una re-renderizacion parcial, no un cambio de tema).
@@ -78,48 +134,77 @@ class Hueman:
         if not only:
             post_apply = [expand_command(c, name, palette) for c in self.config.post_apply]
         failed = []
+        stats = Counter()
+        total_steps = sum(max(len(target.outputs), 1) for target in selected) + len(post_apply or [])
+        progress = _SetProgress(name, total_steps, enabled=not verbose and sys.stderr.isatty())
+        progress.start()
+        completed = 0
         for target in selected:
+            target_steps = max(len(target.outputs), 1)
+            progress.update(completed, f"Rendering {target.name}")
             env = self._jinja_env(target.jinja_delimiters)
             try:
-                wrote = render_target(env, target, name, palette, dry_run, self.config.logger)
+                wrote = render_target(
+                    env, target, name, palette, dry_run, self.config.logger, stats, verbose
+                )
             except TargetRenderError as exc:
-                self.config.logger.warning(f"{exc}; target omitido")
+                self.config.logger.warning(f"{exc}; target skipped")
+                stats["failed"] += 1
                 failed.append(target.name)
+                completed += target_steps
                 continue
+            completed += target_steps
             if not dry_run and wrote and target.reload:
+                progress.update(completed, f"Reloading {target.name}")
                 cmd = expand_command(target.reload, name, palette)
-                rc = run_reload(cmd, self.config.logger)
+                rc = run_reload(cmd, self.config.logger, verbose=verbose) if verbose else run_reload(
+                    cmd, self.config.logger
+                )
                 if rc:
+                    stats["failed"] += 1
                     policy = target.reload_failure or self.config.reload_failure
                     self.config.logger.log(
                         logging.ERROR if policy == "error" else logging.WARNING,
-                        f"{target.name}: reload fallo (exit {rc}): {cmd}",
+                        f"{target.name}: reload failed (exit {rc}): {cmd}",
                     )
                     if policy == "error":
                         failed.append(target.name)
 
         if only:
+            progress.stop()
+            self._set_summary(name, stats, dry_run)
             return failed
 
         if dry_run:
-            for cmd in post_apply:
-                print(f"[DRY RUN] post_apply: {cmd}")
+            if verbose:
+                for cmd in post_apply:
+                    print(f"[DRY RUN] post_apply: {cmd}")
+            progress.stop()
+            self._set_summary(name, stats, dry_run)
             return failed
 
         self.config.state_file.parent.mkdir(parents=True, exist_ok=True)
         atomic_write_text(self.config.state_file, name + "\n")
-        self.config.logger.info(f"Tema activo: {name}")
-        post_failed = run_post_apply(post_apply, self.config.logger) or []
+        progress.update(completed, "Running post-apply hooks")
+        post_failed = (
+            run_post_apply(post_apply, self.config.logger, verbose=verbose)
+            if verbose else run_post_apply(post_apply, self.config.logger)
+        ) or []
         for cmd, rc in post_failed:
+            stats["failed"] += 1
             error = self.config.reload_failure == "error"
             self.config.logger.log(
                 logging.ERROR if error else logging.WARNING,
-                f"post_apply fallo (exit {rc}): {cmd}",
+                f"post_apply failed (exit {rc}): {cmd}",
             )
         if post_failed and self.config.reload_failure == "error":
             failed.append("post_apply")
+        completed += len(post_apply)
+        progress.update(completed, "Finishing")
         if publish:
             self._publish_state(name)
+        progress.stop()
+        self._set_summary(name, stats, dry_run=False)
         return failed
 
     @property
@@ -153,9 +238,9 @@ class Hueman:
             if source.write(State(name, revision)):
                 self._save_revision(revision)
             else:
-                self.config.logger.warning("estado compartido no publicado; paleta aplicada solo en local")
+                self.config.logger.warning("shared state was not published; theme applied locally only")
         except Exception as exc:  # noqa: BLE001 - sync must never break `set`
-            self.config.logger.warning(f"estado compartido no publicado: {exc}")
+            self.config.logger.warning(f"shared state was not published: {exc}")
 
     def sync(self):
         """Pull the shared state and apply it only if its revision is newer.
@@ -165,12 +250,12 @@ class Hueman:
         and cached data is never applied."""
         settings = self.config.state_sync
         if settings is None:
-            self.config.logger.warning("sync: 'state_sync' no configurado; nada que hacer")
+            self.config.logger.warning("sync: 'state_sync' is not configured; nothing to do")
             return 0, "disabled"
         try:
             res = build_source(settings, self.config.logger).read_result()
         except Exception as exc:  # noqa: BLE001 - sync must not crash shell startup
-            self.config.logger.warning(f"sync: estado compartido ilegible: {exc}")
+            self.config.logger.warning(f"sync: shared state is unreadable: {exc}")
             return 0, "unreachable"
         if not res.remote:
             return 0, "unreachable"
@@ -187,17 +272,17 @@ class Hueman:
             failed = self.set_theme(remote.palette, publish=False)
         except PlaceholderError as e:
             # set_theme valida antes de escribir: no hay nada aplicado ni revision que guardar
-            print(f"Config invalida: {e}", file=sys.stderr)
+            print(f"Invalid config: {e}", file=sys.stderr)
             return 1, "failed"
         except SystemExit:
             # load() ya logueo el motivo; la paleta remota no existe aqui (o es invalida).
             # Sync no debe matar el arranque del shell ni avanzar la revision.
             self.config.logger.warning(
-                f"sync: la paleta remota '{remote.palette}' no esta disponible localmente; "
-                "se omite")
+                f"sync: remote palette '{remote.palette}' is unavailable locally; "
+                "skipping")
             return 0, "unknown-palette"
         if failed:
-            print(f"Targets con errores: {', '.join(failed)}", file=sys.stderr)
+            print(f"Failed targets: {', '.join(failed)}", file=sys.stderr)
             return 1, "failed"
         self._save_revision(remote.revision)
         return 0, "applied"
@@ -205,17 +290,17 @@ class Hueman:
     def _drift_lines(self):
         settings = self.config.state_sync
         local = self.local_revision()
-        lines = [f"Revision local: {'r%d' % local if local is not None else '(ninguna)'}"]
+        lines = [f"Local revision: {'r%d' % local if local is not None else '(none)'}"]
         try:
             res = build_source(settings, self.config.logger).read_result()
         except Exception:  # noqa: BLE001
             res = ReadResult(None, False)
         remote = res.state
         if remote is None:
-            lines.append("Revision remota: (desconocida)" if not res.remote else "Revision remota: (vacia)")
+            lines.append("Remote revision: (unknown)" if not res.remote else "Remote revision: (empty)")
         else:
             origin = "remote" if res.remote else "local cache - remote unreachable"
-            lines.append(f"Revision remota: r{remote.revision} ({origin}, paleta {remote.palette})")
+            lines.append(f"Remote revision: r{remote.revision} ({origin}, theme {remote.palette})")
         if not res.remote:
             drift = "remote unreachable"
         elif remote is None:
@@ -230,13 +315,13 @@ class Hueman:
         return lines
 
     def status(self) -> None:
-        print(f"Tema activo: {self.current_theme() or '(ninguno)'}")
+        print(f"Active theme: {self.current_theme() or '(none)'}")
         if self.config.state_sync is not None:
             print("\n".join(self._drift_lines()))
-        print(f"Paletas disponibles: {', '.join(self.list_palettes())}")
+        print(f"Available palettes: {', '.join(self.list_palettes())}")
         total = sum(len(t.outputs) for t in self.config.targets)
         existing = sum(1 for t in self.config.targets for o in t.outputs if o.exists())
-        print(f"Targets configurados: {len(self.config.targets)} ({existing}/{total} outputs existentes en disco)")
+        print(f"Configured targets: {len(self.config.targets)} ({existing}/{total} outputs on disk)")
 
 
 DOCS_URL = "https://hueman.cuevaneander.tech"
@@ -245,15 +330,15 @@ DOCS_URL = "https://hueman.cuevaneander.tech"
 def init_config(path: Path, force: bool) -> int:
     """Copy the packaged example config to `path`; returns the exit code."""
     if path.exists() and not force:
-        print(f"Ya existe: {path} (usa --force para sobrescribir)", file=sys.stderr)
+        print(f"Already exists: {path} (use --force to overwrite)", file=sys.stderr)
         return 1
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         atomic_write_text(path, packaged_example_config().read_text())
     except OSError as exc:
-        print(f"No se pudo escribir {path}: {exc}", file=sys.stderr)
+        print(f"Could not write {path}: {exc}", file=sys.stderr)
         return 1
-    print(f"Config de ejemplo escrito en {path}")
+    print(f"Example config written to {path}")
     return 0
 
 
@@ -267,38 +352,113 @@ def _var_arg(text: str):
     return name, value
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Gestor centralizado de temas (standalone)")
-    parser.add_argument("--version", action="version", version=f"hueman {__version__}")
-    parser.add_argument("--config", help="Ruta al config (por defecto: $HUEMAN_CONFIG o ~/.config/hueman/config.yaml)")
+def _build_parser() -> argparse.ArgumentParser:
+    formatter = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(
+        prog="hueman",
+        description="Apply named color palettes to declarative configuration targets.",
+        formatter_class=formatter,
+        epilog=(
+            "examples:\n"
+            "  hueman init\n"
+            "  hueman list\n"
+            "  hueman set gruvbox --dry-run\n"
+            "  hueman set gruvbox\n"
+            "  hueman sync --quiet\n"
+            f"\nDocs: {DOCS_URL}"
+        ),
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"hueman {__version__}",
+        help="Print the installed version and exit.",
+    )
+    parser.add_argument(
+        "--config",
+        metavar="PATH",
+        help="Use this config file instead of $HUEMAN_CONFIG or ~/.config/hueman/config.yaml.",
+    )
     parser.add_argument(
         "--var", action="append", type=_var_arg, default=[], metavar="NAME=VALUE",
-        help="Define o sobreescribe una variable de 'vars:' para ${NAME} en las rutas "
-        "del config (repetible).",
+        help="Override a config vars: value for ${NAME} in path fields (repeatable).",
     )
-    sub = parser.add_subparsers(dest="command")
+    sub = parser.add_subparsers(dest="command", title="commands", metavar="COMMAND")
 
-    set_p = sub.add_parser("set", help="Aplicar un tema")
-    set_p.add_argument("name")
-    set_p.add_argument("--dry-run", action="store_true")
+    set_p = sub.add_parser(
+        "set",
+        help="Apply a palette to configured targets.",
+        description="Render a palette into configured targets, then run reload and post-apply hooks.",
+        formatter_class=formatter,
+        epilog=(
+            "examples:\n"
+            "  hueman set gruvbox --dry-run\n"
+            "  hueman set gruvbox\n"
+            "  hueman set gruvbox --only kitty,starship\n"
+            "  hueman set gruvbox --verbose\n"
+        ),
+    )
+    set_p.add_argument("name", metavar="PALETTE", help="Palette name. Run `hueman list` to see choices.")
+    set_p.add_argument(
+        "--dry-run", action="store_true",
+        help="Show what would change without writing files or running reload hooks.",
+    )
+    set_p.add_argument(
+        "-v", "--verbose", action="store_true",
+        help="Show each rendered path, reload command, and post-apply hook.",
+    )
     set_p.add_argument(
         "--only", action="append", metavar="NAME[,NAME...]",
-        help="Limitar a targets por nombre o glob (repetible). No actualiza "
-        "el state file ni corre post_apply.",
+        help="Limit to targets by name or glob (repeatable). Does not update "
+        "the state file or run post_apply.",
     )
 
     sync_p = sub.add_parser(
-        "sync", help="Aplicar el estado compartido si es mas nuevo (seguro en el arranque del shell)")
-    sync_p.add_argument("-q", "--quiet", action="store_true",
-                        help="Solo errores reales (sin avisos de red o config)")
+        "sync",
+        help="Apply newer shared state.",
+        description="Apply shared state only when its revision is newer than the local revision.",
+        formatter_class=formatter,
+        epilog=(
+            "examples:\n"
+            "  hueman sync\n"
+            "  hueman sync --quiet\n"
+        ),
+    )
+    sync_p.add_argument(
+        "-q", "--quiet", action="store_true",
+        help="Hide network and configuration warnings; show only errors.",
+    )
 
     init_p = sub.add_parser(
-        "init", help="Escribir un config de ejemplo en la ruta de config por defecto")
-    init_p.add_argument("--force", action="store_true",
-                        help="Sobrescribir el config si ya existe")
+        "init",
+        help="Write an example config file.",
+        description="Write the packaged example config to the resolved config path.",
+        formatter_class=formatter,
+        epilog=(
+            "examples:\n"
+            "  hueman init\n"
+            "  hueman init --force\n"
+        ),
+    )
+    init_p.add_argument("--force", action="store_true", help="Overwrite an existing config file.")
 
-    sub.add_parser("list", help="Listar paletas disponibles")
-    sub.add_parser("status", help="Mostrar tema activo y estado de los targets")
+    sub.add_parser(
+        "list",
+        help="List available palettes.",
+        description="List packaged and configured custom palettes in alphabetical order.",
+        formatter_class=formatter,
+        epilog=("examples:\n  hueman list\n"),
+    )
+    sub.add_parser(
+        "status",
+        help="Show the active palette and target status.",
+        description="Show the active palette, available palettes, and configured target counts.",
+        formatter_class=formatter,
+        epilog=("examples:\n  hueman status\n"),
+    )
+    return parser
+
+
+def main():
+    parser = _build_parser()
 
     args = parser.parse_args()
     if not args.command:
@@ -315,8 +475,8 @@ def main():
             print("\n".join(loader.list_palettes()))
             return
         print(
-            f"Config no encontrada: {config_path}\n"
-            f"Crea uno con `hueman init`, o usa --config / HUEMAN_CONFIG (docs: {DOCS_URL})",
+            f"Config not found: {config_path}\n"
+            f"Create one with `hueman init`, or use --config / HUEMAN_CONFIG (docs: {DOCS_URL})",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -324,20 +484,20 @@ def main():
     try:
         tc = Hueman(HuemanConfig(config_path, dict(args.var)))
     except ConfigError as e:
-        print(f"Config invalida: {e}", file=sys.stderr)
+        print(f"Invalid config: {e}", file=sys.stderr)
         sys.exit(1)
     if args.command == "set":
         only = [p.strip() for v in args.only or [] for p in v.split(",") if p.strip()] or None
         try:
-            failed = tc.set_theme(args.name, args.dry_run, only=only)
+            failed = tc.set_theme(args.name, args.dry_run, only=only, verbose=args.verbose)
         except UnknownTargetError as e:
             print(str(e), file=sys.stderr)
             sys.exit(1)
         except PlaceholderError as e:
-            print(f"Config invalida: {e}", file=sys.stderr)
+            print(f"Invalid config: {e}", file=sys.stderr)
             sys.exit(1)
         if failed:
-            print(f"Targets con errores: {', '.join(failed)}", file=sys.stderr)
+            print(f"Failed targets: {', '.join(failed)}", file=sys.stderr)
             sys.exit(1)
     elif args.command == "sync":
         if args.quiet:

@@ -50,7 +50,7 @@ def test_load_rejects_invalid_name_before_touching_disk(tmp_path, caplog, name):
     with pytest.raises(SystemExit) as exc:
         loader.load(name)
     assert exc.value.code == 1
-    assert "Nombre de paleta invalido" in caplog.text
+    assert "Invalid palette name" in caplog.text
 
 
 def test_cli_set_bad_name_exits_one_cleanly_and_writes_nothing(tmp_path, monkeypatch, capsys):

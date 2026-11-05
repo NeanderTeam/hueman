@@ -55,16 +55,16 @@ class Target:
     def from_dict(cls, name: str, data: dict) -> "Target":
         mode = data.get("mode", "overwrite")
         if mode not in MODES:
-            raise TypeError(f"{name}: mode debe ser 'overwrite' o 'patch', no {mode!r}")
+            raise TypeError(f"{name}: mode must be 'overwrite' or 'patch', not {mode!r}")
         patch_data = data.get("patch")
         if patch_data is not None and not isinstance(patch_data, dict):
-            raise TypeError(f"{name}: 'patch' debe ser un mapeo")
+            raise TypeError(f"{name}: 'patch' must be a mapping")
         if mode == "patch" and not patch_data:
-            raise TypeError(f"{name}: mode 'patch' requiere una seccion 'patch'")
+            raise TypeError(f"{name}: 'patch' mode requires a 'patch' section")
         patch = PatchSpec(**patch_data) if patch_data else None
         raw_outputs = data.get("outputs") or []
         if not isinstance(raw_outputs, list) or not all(isinstance(o, str) for o in raw_outputs):
-            raise TypeError(f"{name}: 'outputs' debe ser una lista de rutas (strings)")
+            raise TypeError(f"{name}: 'outputs' must be a list of path strings")
         delimiters = data.get("jinja_delimiters")
         required = data.get("skip_unless_path_exists") or []
         if isinstance(required, str):
@@ -72,7 +72,7 @@ class Target:
         policy = data.get("reload_failure")
         if policy is not None and policy not in FAILURE_POLICIES:
             raise TypeError(
-                f"{name}: reload_failure debe ser 'warn' o 'error', no {policy!r}"
+                f"{name}: reload_failure must be 'warn' or 'error', not {policy!r}"
             )
         return cls(
             name=name,
