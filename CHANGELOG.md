@@ -10,6 +10,8 @@ All notable changes to this project are documented here.
 
 ### CI
 
+- Bump actions/setup-python to v7.1.0 (5dcd83d)
+- Bump actions/checkout to v7.0.1 (1ae8dac)
 - Pin test runner to ubuntu-24.04 (a7e670d)
 
 ### Documentation
