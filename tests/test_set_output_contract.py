@@ -69,3 +69,20 @@ def test_cli_help_uses_english_set_output_labels(monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "Apply a palette" in output
     assert "Aplicar un tema" not in output
+
+
+def test_cli_help_shows_scannable_examples(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["hueman", "--help"])
+    with pytest.raises(SystemExit):
+        cli.main()
+    root = capsys.readouterr().out
+    assert "commands:" in root
+    assert "hueman set gruvbox --dry-run" in root
+    assert "hueman sync --quiet" in root
+
+    monkeypatch.setattr(sys, "argv", ["hueman", "set", "--help"])
+    with pytest.raises(SystemExit):
+        cli.main()
+    set_help = capsys.readouterr().out
+    assert "hueman set gruvbox --only kitty,starship" in set_help
+    assert "hueman set gruvbox --verbose" in set_help
