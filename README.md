@@ -38,6 +38,8 @@ config and generated files are left alone (details in the
 Other commands: `init` (sample config), `list` (palettes), `status` (active
 theme), `sync` (shared state across machines).
 
+Quick reference on the machine: `hueman --help` and `hueman <command> --help`.
+
 ## Core ideas
 
 - One palette, many targets; output mapping is declarative.
@@ -60,7 +62,8 @@ asking for them to be packaged here.
 ## Docs
 
 Full site: **[hueman.cuevaneander.tech](https://hueman.cuevaneander.tech)**  
-(`/` = landing, `?p=intro` = docs)
+(`/` = landing, `?p=intro` = docs). For flags and short examples on your
+machine, use `hueman --help` / `hueman set --help` rather than a man page.
 
 Local preview (sources under `website/`):
 

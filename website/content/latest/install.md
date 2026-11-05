@@ -25,8 +25,11 @@ Verify:
 ```sh
 hueman --version
 hueman --help
+hueman set --help
 ```
 
+`hueman --help` and `hueman <command> --help` are the standard in-terminal
+reference (flags, short examples). Longer guides live on the site.
 `python3 -m hueman` also works if the command is not on your `PATH`.
 
 ## From source

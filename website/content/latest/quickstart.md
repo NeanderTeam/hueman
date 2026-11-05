@@ -119,4 +119,5 @@ ERROR: Palette not found: no-such. Available: arctic-ice, autumn, ...
 
 - An app without a packaged template: [Add support for a tool](guides/add-a-tool.md).
 - Your own palette: [Add a palette](guides/add-a-palette.md).
-- Command reference: [CLI](cli.md).
+- On the machine: `hueman --help` / `hueman set --help`.
+- Longer command reference: [CLI](cli.md).
