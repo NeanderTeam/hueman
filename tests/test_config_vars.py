@@ -222,7 +222,7 @@ def test_cli_set_without_var_uses_file_value(tmp_path, monkeypatch):
 def test_cli_dry_run_prints_overridden_paths(tmp_path, monkeypatch, capsys):
     cfg = _set_cfg(tmp_path)
     other = tmp_path / "cli_repo"
-    run_cli(monkeypatch, "--config", str(cfg), "--var", f"repo={other}", "set", "mine", "--dry-run")
+    run_cli(monkeypatch, "--config", str(cfg), "--var", f"repo={other}", "set", "mine", "--dry-run", "--verbose")
     captured = capsys.readouterr()
     assert str(other / "out/t.conf") in captured.out + captured.err
     assert not other.exists()

@@ -1,8 +1,17 @@
 import logging
 
 from hueman.engine.colors import contrast_text, is_dark
-from hueman.cli import Hueman
+from hueman.cli import Hueman, _SetProgress
 from hueman.engine.config import HuemanConfig
+
+
+def test_progress_bar_reports_current_target():
+    progress = _SetProgress("galaxy", total=50, enabled=True)
+    progress.update(12, "Rendering qutebrowser")
+
+    assert progress._line() == (
+        "Applying galaxy [██████░░░░░░░░░░░░░░░░░░] 12/50 · Rendering qutebrowser"
+    )
 
 
 def test_color_filters_classify_light_and_dark_values():
@@ -113,7 +122,7 @@ def test_cli_only_flag_is_repeatable_and_comma_separated(tmp_path, monkeypatch):
     seen = {}
     monkeypatch.setattr(
         hueman.Hueman, "set_theme",
-        lambda self, name, dry_run=False, only=None: seen.update(only=only),
+        lambda self, name, dry_run=False, only=None, verbose=False: seen.update(only=only, verbose=verbose),
     )
     (tmp_path / "c.yaml").write_text(f"state_file: {tmp_path / 's'}\ntargets: {{}}\n")
     monkeypatch.setattr(
@@ -124,6 +133,7 @@ def test_cli_only_flag_is_repeatable_and_comma_separated(tmp_path, monkeypatch):
     hueman.main()
 
     assert seen["only"] == ["a", "b", "c_*"]
+    assert seen["verbose"] is False
 
 
 def test_cli_only_unknown_exits_nonzero(tmp_path, monkeypatch, capsys):
@@ -143,3 +153,34 @@ def test_cli_only_unknown_exits_nonzero(tmp_path, monkeypatch, capsys):
 
     assert exc.value.code != 0
     assert "zzz" in capsys.readouterr().err
+
+
+def test_set_reports_concise_written_skipped_and_failed_counts(tmp_path, capsys):
+    (tmp_path / "t.j2").write_text("x\n")
+    (tmp_path / "palette.yaml").write_text("kitty: {}\n")
+    (tmp_path / "hueman.yaml").write_text(
+        f"state_file: {tmp_path / 'state'}\npalette_dirs: [{tmp_path}]\n"
+        f"template_dirs: [{tmp_path}]\ntargets:\n"
+        f"  written:\n    template: t.j2\n    palette_key: kitty\n"
+        f"    outputs: ['{tmp_path / 'written.out'}']\n"
+        f"  skipped:\n    template: t.j2\n    palette_key: kitty\n"
+        f"    skip_if_missing_parent: true\n    outputs: ['{tmp_path / 'missing' / 'skipped.out'}']\n"
+    )
+
+    Hueman(HuemanConfig(tmp_path / "hueman.yaml")).set_theme("palette")
+
+    assert capsys.readouterr().out == "Applied: palette (written: 1, skipped: 1, failed: 0)\n"
+
+
+def test_dry_run_shows_paths_only_with_verbose(tmp_path, monkeypatch, capsys):
+    app, _, _ = _only_app(tmp_path, monkeypatch)
+
+    app.set_theme("palette", dry_run=True)
+    clean = capsys.readouterr().out
+    app.set_theme("palette", dry_run=True, verbose=True)
+    verbose = capsys.readouterr().out
+
+    assert "would write" not in clean
+    assert clean == "Dry run: palette (written: 3, skipped: 0, failed: 0)\n"
+    assert verbose.count("[DRY RUN] would write") == 3
+    assert "Dry run: palette (written: 3, skipped: 0, failed: 0)" in verbose

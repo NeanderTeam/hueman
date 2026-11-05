@@ -35,10 +35,15 @@ def make_app(tmp_path, extra_top="", targets=None, post_apply=None):
 
 def test_run_reload_returns_exit_code_and_logs_it(caplog):
     caplog.set_level(logging.INFO, logger="hueman-tests")
-    assert run_reload("exit 3", LOG) == 3
-    assert run_reload("true", LOG) == 0
+    assert run_reload("exit 3", LOG, verbose=True) == 3
+    assert run_reload("true", LOG, verbose=True) == 0
     assert run_reload("", LOG) == 0
     assert "exit 3" in caplog.text
+
+
+def test_run_reload_hides_successful_command_output_by_default(capsys):
+    assert run_reload("printf noisy", LOG) == 0
+    assert capsys.readouterr().out == ""
 
 
 def test_run_post_apply_runs_all_and_returns_failures(tmp_path):
